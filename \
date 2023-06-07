@@ -14,8 +14,8 @@ class Board():
         self.turn = 'X' #Who's turn is it?
         self.game_state = State.ONGOING 
         self.winner = '' 
-        self.moves_played = [] 
-        self.is_maximizer = True # Useful for 
+        self.moves_played = []
+        self.is_maximizer = True
 
     def swap_turn(self) -> None:
         if self.turn == 'X':
@@ -69,26 +69,25 @@ class Board():
         print(row2)
         print(row3)
     
-def make_random_best_move(board) -> None:
+def make_best_move(board) -> None:
     if board.is_maximizer:
         bestScore = -math.inf
     else:
         bestScore = math.inf
 
-    bestMove = []
+    bestMove = None
     for move in board.get_possible_moves():
         board.make_move(move)
         score = minimax(board)
         board.undo()
-        if board.is_maximizer & (score >= bestScore):
+        if board.is_maximizer & (score > bestScore):
             bestScore = score
-            bestMove.append((move, score))
-        elif (not board.is_maximizer) & (score <= bestScore):
+            bestMove = move
+        elif (not board.is_maximizer) & (score < bestScore):
             bestScore = score
-            bestMove.append((score, move))
-    assert bestMove is not []
-    bestMove = [move for move, score in bestMove if score == bestScore ]
-    bestMove = random.choice(bestMove)
+            bestMove = move
+                
+    assert bestMove is not None
     board.make_move(bestMove)
 
 def minimax(board: Board) -> int:
