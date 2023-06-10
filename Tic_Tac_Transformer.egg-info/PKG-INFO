@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: Tic-Tac-Transformer
+Version: 0.0.0
+Summary: Using mechanistic interpretability techniques to understand the inside of a transformer that understands tic tac toe!
+Maintainer: Jack Strand
+Maintainer-email: jackofthestrand@gmail.com
+Keywords: Transformers,AI,Interpretability
+Classifier: Programming Language :: Python :: 3

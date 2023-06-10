@@ -1,0 +1,10 @@
+pyproject.toml
+setup.cfg
+Tic_Tac_Transformer.egg-info/PKG-INFO
+Tic_Tac_Transformer.egg-info/SOURCES.txt
+Tic_Tac_Transformer.egg-info/dependency_links.txt
+Tic_Tac_Transformer.egg-info/requires.txt
+Tic_Tac_Transformer.egg-info/top_level.txt
+src/__init__.py
+src/game.py
+tests/test_game.py
