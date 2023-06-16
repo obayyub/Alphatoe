@@ -7,4 +7,5 @@ Tic_Tac_Transformer.egg-info/requires.txt
 Tic_Tac_Transformer.egg-info/top_level.txt
 src/__init__.py
 src/game.py
+src/model.py
 tests/test_game.py
