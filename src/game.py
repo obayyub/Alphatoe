@@ -83,7 +83,8 @@ def minimax(board: Board, depth: int = 0) -> int:
     if (board.game_state is State.DRAW):
         return 0
     elif (board.game_state is State.OVER):
-        return 10 - depth if board.get_winner() == board.maximizer else -10 + depth
+        return 10 if board.get_winner() == board.maximizer else -10
+        # return 10 - depth if board.get_winner() == board.maximizer else -10 + depth
 
     scores = []
     for move in board.get_possible_moves():
@@ -93,7 +94,7 @@ def minimax(board: Board, depth: int = 0) -> int:
 
     return max(scores) if board.is_maximizer else min(scores)
 
-def get_best_moves(board) -> List[int]:
+def get_best_moves(board: Board) -> List[int]:
     if board.is_maximizer:
         bestScore = -math.inf
     else:
@@ -148,6 +149,7 @@ def make_random_best_move(board) -> None:
             bestMove.append((move, score))
     assert bestMove is not []
     bestMove = [move for move, score in bestMove if score == bestScore ]
+    print(bestMove)
     bestMove = random.choice(bestMove)
     board.make_move(bestMove)
 def play_game():
