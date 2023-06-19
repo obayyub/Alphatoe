@@ -32,7 +32,10 @@ class Board():
 
     # External
     def get_possible_moves(self) -> List[int] :
-        return [i for i in range(9) if self.grid[i] == ' ']
+        if self.game_state != State.ONGOING:
+            return []
+        else:
+            return [i for i in range(9) if self.grid[i] == ' ']
 
     # External
     def make_move(self, move: int):
@@ -77,6 +80,23 @@ class Board():
         print(row1)
         print(row2)
         print(row3)
+
+def generate_all_games(boards: List[Board], finished_boards: List[Board] = []) -> List[Board]:
+    ongoing_boards = []
+    for board in boards:
+        possible_moves = board.get_possible_moves()
+        if possible_moves != []:
+            for move in possible_moves:
+                _board = deepcopy(board)
+                ongoing_boards.append(_board.make_move(move))
+        else:
+            finished_boards.append(board)
+    
+    if ongoing_boards == []:
+        return finished_boards
+    else:
+        generate_all_games(ongoing_boards, finished_boards=finished_boards)
+
 
 def apply_best_moves(boards: List[Board]) -> List[Board]: # type: ignore
     game_len = len(boards[0].moves_played) + 1
@@ -155,9 +175,9 @@ def minimax(board: Board) -> int:
 
     return max(scores) if board.is_maximizer else min(scores)
 
-def play_game():
-    board = Board()
-    while board.game_state == State.ONGOING:
-        make_random_best_move(board)
-    return board
+# def play_game():
+#     board = Board()
+#     while board.game_state == State.ONGOING:
+#         make_random_best_move(board)
+#     return board
 

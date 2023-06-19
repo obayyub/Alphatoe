@@ -17,23 +17,25 @@ class Board():
         self.game_state = State.ONGOING 
         self.winner = '' 
         self.moves_played = [] 
-        self.maximizer = 'X'
         self.is_maximizer = True # Useful for the minimax algorithm
 
     # Internal
     def swap_turn(self) -> None:
         if self.turn == 'X':
             self.turn = 'O'
-            self.is_maximizer = not self.is_maximizer
+            self.maximizer = not self.is_maximizer
         elif self.turn == 'O':
             self.turn = 'X'
-            self.is_maximizer = not self.is_maximizer
+            self.maximizer = not self.is_maximizer
         else:
             raise ValueError(f"Oh god how did we end up here, self.turn is {self.turn}")
 
     # External
     def get_possible_moves(self) -> List[int] :
-        return [i for i in range(9) if self.grid[i] == ' ']
+        if self.game_state != State.ONGOING:
+            return []
+        else:
+            return [i for i in range(9) if self.grid[i] == ' ']
 
     # External
     def make_move(self, move: int):
@@ -43,6 +45,7 @@ class Board():
         self.moves_played.append(move)
         self.game_state = self.get_game_state()
         self.swap_turn()
+        return self
 
     # Internal
     def get_game_state(self) -> State:
@@ -78,23 +81,44 @@ class Board():
         print(row2)
         print(row3)
 
-# Depth is needed to distinguish between winning in a shorter branch and a longer branch
-def minimax(board: Board, depth: int = 0) -> int:
-    if (board.game_state is State.DRAW):
-        return 0
-    elif (board.game_state is State.OVER):
-        return 10 if board.get_winner() == board.maximizer else -10
-        # return 10 - depth if board.get_winner() == board.maximizer else -10 + depth
+def generate_all_games(boards: List[Board], finished_boards: List[Board] = []) -> List[Board]:
+    ongoing_boards = []
+    for board in boards:
+        possible_moves = board.get_possible_moves()
+        if possible_moves != []:
+            for move in possible_moves:
+                _board = deepcopy(board)
+                ongoing_boards.append(_board.make_move(move))
+        else:
+            finished_boards.append(board)
+    
+    if ongoing_boards == []:
+        return finished_boards
+    else:
+        return generate_all_games(ongoing_boards, finished_boards=finished_boards)
 
-    scores = []
-    for move in board.get_possible_moves():
-        board.make_move(move)
-        scores.append(minimax(board, depth + 1))
-        board.undo()
 
-    return max(scores) if board.is_maximizer else min(scores)
+def apply_best_moves(boards: List[Board]) -> List[Board]: # type: ignore
+    game_len = len(boards[0].moves_played) + 1
+    print(f"we're on the {game_len}th loop!")
+    new_boards = []
+    for board in boards:
+        for move in get_best_moves(board):
+            _board = deepcopy(board)
+            new_boards.append(_board.make_move(move))
+    print(f"we've got {len(new_boards)} boards, y'all!")
 
-def get_best_moves(board: Board) -> List[int]:
+    # boards : List[Board] = [board.make_move(move) for board in boards for move in get_best_moves(board)]
+    if new_boards[0].game_state == State.DRAW:
+        print(f"we've got {len(new_boards)} boards, y'all!")
+        # TODO: Make sure that everything in here is of the same size
+        # TODO: Make sure that there are no duplicates
+        return new_boards 
+    else:
+        apply_best_moves(new_boards)
+    
+
+def get_best_moves(board) -> List[int]:
     if board.is_maximizer:
         bestScore = -math.inf
     else:
@@ -114,21 +138,6 @@ def get_best_moves(board: Board) -> List[int]:
     assert bestMove is not []
     bestMove = [move for move, score in bestMove if score == bestScore ]
     return bestMove
-
-# External
-def apply_best_moves(boards: List[Board]) -> List[Board]:
-    new_boards = []
-    for board in boards:
-        for move in get_best_moves(board):
-            _board = deepcopy(board)
-            _board.make_move(move)
-            new_boards.append(_board)
-
-    if new_boards[0].game_state == State.DRAW:
-        return new_boards
-    else:
-        return apply_best_moves(new_boards)
-    
     
 def make_random_best_move(board) -> None:
     if board.is_maximizer:
@@ -149,12 +158,26 @@ def make_random_best_move(board) -> None:
             bestMove.append((move, score))
     assert bestMove is not []
     bestMove = [move for move, score in bestMove if score == bestScore ]
-    print(bestMove)
     bestMove = random.choice(bestMove)
     board.make_move(bestMove)
-def play_game():
-    board = Board()
-    while board.game_state == State.ONGOING:
-        make_random_best_move(board)
-    return board
+
+def minimax(board: Board) -> int:
+    if (board.game_state is State.DRAW):
+        return 0
+    elif (board.game_state is State.OVER):
+        return 1 if board.get_winner() is board.is_maximizer else -1
+
+    scores = []
+    for move in board.get_possible_moves():
+        board.make_move(move)
+        scores.append(minimax(board))
+        board.undo()
+
+    return max(scores) if board.is_maximizer else min(scores)
+
+# def play_game():
+#     board = Board()
+#     while board.game_state == State.ONGOING:
+#         make_random_best_move(board)
+#     return board
 
