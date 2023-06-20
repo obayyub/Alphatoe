@@ -14,20 +14,20 @@ class Board():
         self.grid = [' '] * 9 # The game board
         self.turn = 'X' #Who's turn is it?
         self.game_state: State = State.ONGOING 
-        self.winner = '' 
         self.moves_played: list[int] = [] 
         self.is_maximizer = True # Useful for the minimax algorithm
 
     # Internal
     def swap_turn(self) -> None:
-        if self.turn == 'X':
-            self.turn = 'O'
-            self.maximizer = not self.is_maximizer
-        elif self.turn == 'O':
-            self.turn = 'X'
-            self.maximizer = not self.is_maximizer
-        else:
-            raise ValueError(f"Oh god how did we end up here, self.turn is {self.turn}")
+        match self.turn:
+            case 'X':
+                self.turn = 'O'
+                self.is_maximizer = not self.is_maximizer
+            case 'O':
+                self.turn = 'X'
+                self.is_maximizer = not self.is_maximizer
+            case _:
+                raise ValueError(f"Oh god how did we end up here, self.turn is {self.turn}")
 
     # External
     def get_possible_moves(self) -> List[int] :
@@ -39,15 +39,15 @@ class Board():
     # External
     def make_move(self, move: int):
         if move not in self.get_possible_moves():
-            raise ValueError("Not a valid move nerd!!")
+            raise ValueError(f"{move} is not a valid move nerd!!")
         self.grid[move] = self.turn
         self.moves_played.append(move)
-        self.game_state = self.get_game_state()
+        self.game_state = self.set_game_state()
         self.swap_turn()
         return self
 
     # Internal
-    def get_game_state(self) -> State:
+    def set_game_state(self) -> State:
         win_conditions = [(0, 1, 2), (3, 4, 5), (6, 7, 8), 
                           (0, 3, 6), (1, 4, 7), (2, 5, 8),
                           (0, 4, 8), (2, 4, 6)]
@@ -62,12 +62,17 @@ class Board():
 
     # External
     def get_winner(self) -> str:
-        return self.winner 
+        if self.winner != None:
+            return self.winner
+        else:
+            raise ValueError("Game's not over yet or it's a draw!")
+
 
     # External
     def undo(self) -> None:
         last_move = self.moves_played.pop()
         self.grid[last_move] = ' '
+        self.game_state = State.ONGOING
         self.swap_turn()
 
     # External
@@ -82,7 +87,7 @@ class Board():
 
 def generate_all_games(boards: List[Board], finished_boards: Optional[List[Board]] = None) -> List[Board]:
     if finished_boards == None:
-        finished_boards= []
+        finished_boards = []
     ongoing_boards: list[Board] = []
     for board in boards:
         possible_moves = board.get_possible_moves()
@@ -98,6 +103,20 @@ def generate_all_games(boards: List[Board], finished_boards: Optional[List[Board
     else:
         return generate_all_games(ongoing_boards, finished_boards=finished_boards)
 
+def minimax(board: Board, depth=0) -> int:
+    if (board.game_state == State.DRAW):
+        return 0
+    elif (board.game_state == State.OVER):
+        return 10 - depth if board.turn == "O" else -10 + depth
+
+    scores: list[int]= []
+    for move in board.get_possible_moves():
+        board.make_move(move)
+        scores.append(minimax(board, depth+1))
+        board.undo()
+
+    return max(scores) if board.is_maximizer else min(scores)
+
 def get_best_moves(board: Board) -> List[int]:
     if board.is_maximizer:
         bestScore = -math.inf
@@ -109,35 +128,32 @@ def get_best_moves(board: Board) -> List[int]:
         board.make_move(move)
         score = minimax(board)
         board.undo()
-        if board.is_maximizer & (score >= bestScore):
+        if board.is_maximizer and (score >= bestScore):
             bestScore = score
             bestMove.append((move, score))
-        elif (not board.is_maximizer) & (score <= bestScore):
+        elif (not board.is_maximizer) and (score <= bestScore):
             bestScore = score
             bestMove.append((move, score))
-    assert bestMove is not []
+    assert bestMove != []
     bestMoves = [move for move, score in bestMove if score == bestScore ]
     return bestMoves
 
-def apply_best_moves(boards: List[Board]) -> List[Board]: # type: ignore
-    game_len = len(boards[0].moves_played) + 1
-    print(f"we're on the {game_len}th loop!")
-    new_boards: list[Board] = []
+def apply_best_moves(boards: List[Board], finished_boards: Optional[List[Board]] = None) -> List[Board]:
+    if finished_boards == None:
+        finished_boards = []
+    ongoing_boards = []
     for board in boards:
-        for move in get_best_moves(board):
-            _board = deepcopy(board)
-            new_boards.append(_board.make_move(move))
-    print(f"we've got {len(new_boards)} boards, y'all!")
-
-    # boards : List[Board] = [board.make_move(move) for board in boards for move in get_best_moves(board)]
-    if new_boards[0].game_state == State.DRAW:
-        print(f"we've got {len(new_boards)} boards, y'all!")
-        # TODO: Make sure that everything in here is of the same size
-        # TODO: Make sure that there are no duplicates
-        return new_boards 
+        if board.game_state != State.ONGOING:
+            finished_boards.append(board)
+        else:
+            for move in get_best_moves(board):
+                _board = deepcopy(board)
+                _board.make_move(move)
+                ongoing_boards.append(_board)
+    if ongoing_boards == []:
+        return finished_boards
     else:
-        apply_best_moves(new_boards)
-    
+        return apply_best_moves(ongoing_boards, finished_boards)
     
 def make_random_best_move(board: Board) -> None:
     if board.is_maximizer:
@@ -160,20 +176,6 @@ def make_random_best_move(board: Board) -> None:
     bestMoves: list[int] = [move for move, score in moves if score == bestScore ]
     bestMove = random.choice(bestMoves)
     board.make_move(bestMove)
-
-def minimax(board: Board) -> int:
-    if (board.game_state is State.DRAW):
-        return 0
-    elif (board.game_state is State.OVER):
-        return 1 if board.get_winner() is board.is_maximizer else -1
-
-    scores: list[int]= []
-    for move in board.get_possible_moves():
-        board.make_move(move)
-        scores.append(minimax(board))
-        board.undo()
-
-    return max(scores) if board.is_maximizer else min(scores)
 
 # def play_game():
 #     board = Board()
