@@ -103,16 +103,16 @@ def generate_all_games(boards: List[Board], finished_boards: Optional[List[Board
     else:
         return generate_all_games(ongoing_boards, finished_boards=finished_boards)
 
-def minimax(board: Board, depth=0) -> int:
+def minimax(board: Board) -> int:
     if (board.game_state == State.DRAW):
         return 0
     elif (board.game_state == State.OVER):
-        return 10 - depth if board.turn == "O" else -10 + depth
+        return 10 if board.turn == "O" else -10 
 
     scores: list[int]= []
     for move in board.get_possible_moves():
         board.make_move(move)
-        scores.append(minimax(board, depth+1))
+        scores.append(minimax(board))
         board.undo()
 
     return max(scores) if board.is_maximizer else min(scores)
