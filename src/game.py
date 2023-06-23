@@ -107,7 +107,12 @@ class Board:
         print(row2)
         print(row3)
 
-
+def get_possible_moves(board: Board) -> List[int]:
+    if board.game_state != State.ONGOING:
+        return []
+    else:
+        return [i for i in range(9) if board.grid[i] == " "]
+    
 def generate_all_games(
     boards: List[Board], finished_boards: Optional[List[Board]] = None
 ) -> List[Board]:
@@ -208,20 +213,28 @@ def make_random_best_move(board: Board) -> None:
     bestMove = random.choice(bestMoves)
     board.make_move(bestMove)
 
-def entropy(board: Board) -> float:
-    moves = board.get_possible_moves()
-    return -(1 / len(moves)) * np.log2(1 / len(moves))
+def determine_entropy(board: Board, move_selector) -> float:
+    moves = move_selector(board)
+    entropy = -(1 / len(moves)) * np.log2(1 / len(moves))
+    return entropy
 
 
 # goes over number of unique subsequences of tic tac toe
-def tree_walk(board: Board) -> Tuple[float, int]:
+def tree_walk(board: Board, game_tree: str) -> Tuple[float, int]:
+    if game_tree == 'all':
+        move_selector = get_possible_moves
+    elif game_tree == 'strat':
+        move_selector = get_best_moves
+    else:
+        raise ValueError("game_tree arg of tree_walk must be either 'all' or 'strat'")
+
     if board.is_over():
         return (0, 10 - len(board.moves_played))
-    total_entropy = entropy(board)
+    total_entropy = determine_entropy(board, move_selector)
     seen = 1
-    for move in board.get_possible_moves():
+    for move in move_selector(board):
         board.make_move(move)
-        extra_entropy, extra_seen = tree_walk(board)
+        extra_entropy, extra_seen = tree_walk(board, game_tree)
         total_entropy += extra_entropy
         seen += extra_seen
         board.undo()
