@@ -1,6 +1,6 @@
 import random
 import math
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Callable, Any
 from enum import Enum
 from copy import deepcopy
 import numpy as np
@@ -107,12 +107,14 @@ class Board:
         print(row2)
         print(row3)
 
+
 def get_possible_moves(board: Board) -> List[int]:
     if board.game_state != State.ONGOING:
         return []
     else:
         return [i for i in range(9) if board.grid[i] == " "]
-    
+
+
 def generate_all_games(
     boards: List[Board], finished_boards: Optional[List[Board]] = None
 ) -> List[Board]:
@@ -213,33 +215,31 @@ def make_random_best_move(board: Board) -> None:
     bestMove = random.choice(bestMoves)
     board.make_move(bestMove)
 
-def determine_entropy(board: Board, move_selector) -> float:
-    moves = move_selector(board)
+
+def determine_entropy(board: Board, move_search: Callable[..., list[int]]) -> float:
+    moves = move_search(board)
     entropy = -(1 / len(moves)) * np.log2(1 / len(moves))
     return entropy
 
 
 # goes over number of unique subsequences of tic tac toe
-def tree_walk(board: Board, game_tree: str) -> Tuple[float, int]:
-    if game_tree == 'all':
-        move_selector = get_possible_moves
-    elif game_tree == 'strat':
-        move_selector = get_best_moves
-    else:
-        raise ValueError("game_tree arg of tree_walk must be either 'all' or 'strat'")
-
+def tree_walk(board: Board, move_search: Callable[..., list[int]]) -> Tuple[float, int]:
     if board.is_over():
         return (0, 10 - len(board.moves_played))
-    total_entropy = determine_entropy(board, move_selector)
+    total_entropy = determine_entropy(board, move_search)
     seen = 1
-    for move in move_selector(board):
+    for move in move_search(board):
         board.make_move(move)
-        extra_entropy, extra_seen = tree_walk(board, game_tree)
+        extra_entropy, extra_seen = tree_walk(board, move_search)
         total_entropy += extra_entropy
         seen += extra_seen
         board.undo()
     return (total_entropy, seen)
 
+
+"""
+This may have a problem because even though we have an equal probability at a given node, when we sample across the game tree, some moves may have more weight in terms of the number of further nodes they generate than others.
+"""
 
 """
 coin flips
