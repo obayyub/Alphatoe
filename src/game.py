@@ -19,6 +19,7 @@ class Board:
         self.game_state: State = State.ONGOING
         self.moves_played: list[int] = []
         self.is_maximizer = True  # Useful for the minimax algorithm
+        self.children: list[Board] = []
 
     # Internal
     def swap_turn(self) -> None:
@@ -216,25 +217,42 @@ def make_random_best_move(board: Board) -> None:
     board.make_move(bestMove)
 
 
-def determine_entropy(board: Board, move_search: Callable[..., list[int]]) -> float:
-    moves = move_search(board)
-    entropy = -(1 / len(moves)) * np.log2(1 / len(moves))
+def determine_entropy(counts: list[int]) -> float:
+    total_counts = sum(counts)
+    entropy = 0.0
+    for count in counts:
+        entropy += -(count / total_counts) * np.log2(count / total_counts)
     return entropy
 
+# goes over number of unique subsequences of tic tac toe
+def generate_tree(board: Board, move_search: Callable[..., list[int]]) -> None:
+    if board.is_over():
+        return None
+    children = []
+    for move in move_search(board):
+        _board = deepcopy(board)
+        _board.make_move(move)
+        children.append(_board)
+        generate_tree(_board, move_search)
+    board.children = children
+                
 
 # goes over number of unique subsequences of tic tac toe
 def tree_walk(board: Board, move_search: Callable[..., list[int]]) -> Tuple[float, int]:
     if board.is_over():
         return (0, 10 - len(board.moves_played))
-    total_entropy = determine_entropy(board, move_search)
+    counts = []
     seen = 1
+    total_entropy = 0.0
     for move in move_search(board):
         board.make_move(move)
         extra_entropy, extra_seen = tree_walk(board, move_search)
-        total_entropy += extra_entropy
+        counts.append(extra_seen)
         seen += extra_seen
+        total_entropy += extra_entropy
         board.undo()
-    return (total_entropy, seen)
+    local_entropy = determine_entropy(counts)
+    return (total_entropy+local_entropy, seen)
 
 
 """
