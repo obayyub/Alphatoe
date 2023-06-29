@@ -32,13 +32,13 @@ class Trie:
       node = node.children[move]
     return node.is_end_of_game
 
-  def starts_with(self, initial_moves: List[int]) -> bool:
+  def get_sub_node(self, initial_moves: List[int]) -> int:
     node = self.root
     for move in initial_moves:
       if move not in node.children:
-        return False
+        return 0
       node = node.children[move]
-    return True
+    return node.children.values()
 
   def partial_game_entropy(self, initial_moves: List[int]) -> float:
     node = self.root
@@ -62,7 +62,7 @@ class Trie:
       if prob > 0:
         entropy -= prob * math.log2(prob)
 
-    return entropy
+    return entropy * node.game_count
 
   def total_entropy(self, node: Optional[TrieNode] = None) -> float:
     if node is None:
