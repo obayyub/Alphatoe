@@ -5,6 +5,7 @@ import torch as t
 from transformer_lens import HookedTransformer
 
 
+# constants
 DEFAULT_LR = 1e-5
 DEFAULT_WD = 1e-4
 DEFAULT_EPOCHS = 40
@@ -16,7 +17,7 @@ def rearrange(t):
 
     This can also be achieved by permuting the last two dimensions, but this should be faster.
     """
-    return einops.rearrange("batch seq token -> (batch seq) token")
+    return einops.rearrange(t, "batch seq token -> (batch seq) token")
 
 
 def train(
@@ -29,7 +30,7 @@ def train(
     loss_fn: Callable = t.nn.functional.cross_entropy,
     n_epochs: int = DEFAULT_EPOCHS,
     batch_size: int = DEFAULT_BATCH_SIZE,
-) -> None:
+) -> HookedTransformer:
     """Trains models with specified data and hyperparameters.
 
     Test inference runs for every update on the entire set.
@@ -64,3 +65,5 @@ def train(
         print(
             f"Epoch {epoch} | Train Loss: {train_loss.item()} | Test Loss: {test_loss.item()}"
         )
+
+    return model
