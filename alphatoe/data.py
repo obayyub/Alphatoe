@@ -4,7 +4,7 @@ import numpy as np
 import torch as t
 from torch.nn import functional as F
 
-from src.game import Board, apply_best_moves, generate_all_games
+from alphatoe.game import Board, apply_best_moves, generate_all_games
 
 
 def gen_games(gametype="all"):

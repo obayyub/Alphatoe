@@ -5,7 +5,7 @@ import argparse
 import torch
 from transformer_lens import HookedTransformerConfig, HookedTransformer
 
-from src import data, train
+from alphatoe import data, train
 
 
 def main(args: argparse.Namespace):
