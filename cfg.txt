@@ -1,0 +1,47 @@
+HookedTransformerConfig:
+{'act_fn': 'relu',
+ 'attention_dir': 'causal',
+ 'attn_only': False,
+ 'attn_types': None,
+ 'checkpoint_index': None,
+ 'checkpoint_label_type': None,
+ 'checkpoint_value': None,
+ 'd_head': 16,
+ 'd_mlp': 512,
+ 'd_model': 128,
+ 'd_vocab': 11,
+ 'd_vocab_out': 10,
+ 'device': 'cuda',
+ 'eps': 1e-05,
+ 'final_rms': False,
+ 'from_checkpoint': False,
+ 'gated_mlp': False,
+ 'init_mode': 'gpt2',
+ 'init_weights': True,
+ 'initializer_range': 0.07071067811865475,
+ 'model_name': 'custom',
+ 'n_ctx': 10,
+ 'n_devices': 1,
+ 'n_heads': 8,
+ 'n_layers': 8,
+ 'n_params': 1572864,
+ 'normalization_type': 'LN',
+ 'original_architecture': None,
+ 'parallel_attn_mlp': False,
+ 'positional_embedding_type': 'standard',
+ 'rotary_dim': None,
+ 'scale_attn_by_inverse_layer_idx': False,
+ 'seed': 1337,
+ 'tokenizer_name': None,
+ 'use_attn_result': False,
+ 'use_attn_scale': True,
+ 'use_hook_tokens': False,
+ 'use_local_attn': False,
+ 'use_split_qkv_input': False,
+ 'window_size': None}
+Other Params:
+lr : 1e-05
+weight_decay : 0.0001
+test_train_split : 0.8
+epochs : 40
+batch_size : 4096
