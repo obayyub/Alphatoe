@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional, Callable, Any
 from enum import Enum
 from copy import deepcopy
 import numpy as np
-from src.trie import Trie
+from alphatoe.trie import Trie
 
 
 class State(Enum):
