@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional, Callable, Any
 from enum import Enum
 from copy import deepcopy
 import numpy as np
+from src.trie import Trie
 
 
 class State(Enum):
@@ -253,6 +254,24 @@ def tree_walk(board: Board, move_search: Callable[..., list[int]]) -> Tuple[floa
         board.undo()
     local_entropy = determine_entropy(counts)
     return (total_entropy+local_entropy, seen)
+
+def entropy(subseq, trie) -> float:
+    node = trie.get_sub_node(subseq)
+    counts = [child.game_count for child in node]
+    #sum of array
+    total_count = sum(counts)
+    #drop 0 counts
+    counts = [count for count in counts if count != 0]
+    entropy = [(-count/total_count) * math.log(count/total_count) for count in counts]
+    return sum(entropy)
+
+def avg_entropy(data_set, trie):
+    total_entropy = 0
+    for sample in data_set:
+        for i in range(len(sample)):
+            total_entropy += entropy(sample[:i], trie)
+
+    return total_entropy / (10*len(data_set))
 
 
 """

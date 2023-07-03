@@ -60,7 +60,8 @@ class Trie:
     for child_node in node.children.values():
       prob = child_node.game_count / node.game_count
       if prob > 0:
-        entropy -= prob * math.log2(prob)
+        #entropy in nats
+        entropy -= prob * math.log(prob)
 
     return entropy * node.game_count
 
