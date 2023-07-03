@@ -51,9 +51,10 @@ class Trie:
     entropy = 0
     for child_node in node.children.values():
       prob = child_node.game_count / node.game_count
-      entropy -= prob * math.log2(prob)
+      #entropy in nats
+      entropy -= prob * math.log(prob)
 
-    return entropy
+    return entropy * node.game_count
 
   def entropy(self, node: TrieNode) -> float:
     entropy = 0
