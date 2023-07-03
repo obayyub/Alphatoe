@@ -1,5 +1,5 @@
 import pytest
-from src.game import Board, State
+from alphatoe.game import Board, State
 
 class TestBoard():
     def test_get_possible_moves(self):
