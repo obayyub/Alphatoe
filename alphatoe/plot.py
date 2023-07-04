@@ -1,11 +1,13 @@
 import torch
+from torch import Tensor
 import numpy as np
 from functools import partial
 from plotly import express as px
 from plotly import graph_objects as go
+from typing import Optional, Any
 
 
-def to_numpy(tensor, flat=False):
+def to_numpy(tensor: Tensor, flat: bool = False) -> Tensor:
     if type(tensor) != torch.Tensor:
         return tensor
     if flat:
@@ -14,7 +16,13 @@ def to_numpy(tensor, flat=False):
         return tensor.detach().cpu().numpy()
 
 
-def imshow(tensor, xaxis=None, yaxis=None, animation_name="Snapshot", **kwargs):
+def imshow(
+    tensor: Tensor,
+    xaxis: Optional[str] = None,
+    yaxis: Optional[str] = None,
+    animation_name: str = "Snapshot",
+    **kwargs: Any
+):
     tensor = torch.squeeze(tensor)
     px.imshow(
         to_numpy(tensor, flat=False),

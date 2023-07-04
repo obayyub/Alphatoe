@@ -1,6 +1,6 @@
 import random
 import math
-from typing import List, Tuple, Optional, Callable, Any
+from typing import Optional, Callable
 from enum import Enum
 from copy import deepcopy
 import numpy as np
@@ -21,6 +21,7 @@ class Board:
         self.moves_played: list[int] = []
         self.is_maximizer = True  # Useful for the minimax algorithm
         self.children: list[Board] = []
+        self.winner = ""
 
     # Internal
     def swap_turn(self) -> None:
@@ -43,7 +44,7 @@ class Board:
             return False
 
     # External
-    def get_possible_moves(self) -> List[int]:
+    def get_possible_moves(self) -> list[int]:
         if self.game_state != State.ONGOING:
             return []
         else:
@@ -87,7 +88,7 @@ class Board:
 
     # External
     def get_winner(self) -> str:
-        if self.winner != None:
+        if self.winner != "":
             return self.winner
         else:
             raise ValueError("Game's not over yet or it's a draw!")
@@ -110,7 +111,7 @@ class Board:
         print(row3)
 
 
-def get_possible_moves(board: Board) -> List[int]:
+def get_possible_moves(board: Board) -> list[int]:
     if board.game_state != State.ONGOING:
         return []
     else:
@@ -118,8 +119,8 @@ def get_possible_moves(board: Board) -> List[int]:
 
 
 def generate_all_games(
-    boards: List[Board], finished_boards: Optional[List[Board]] = None
-) -> List[Board]:
+    boards: list[Board], finished_boards: Optional[list[Board]] = None
+) -> list[Board]:
     if finished_boards == None:
         finished_boards = []
     ongoing_boards: list[Board] = []
@@ -153,13 +154,13 @@ def minimax(board: Board) -> int:
     return max(scores) if board.is_maximizer else min(scores)
 
 
-def get_best_moves(board: Board) -> List[int]:
+def get_best_moves(board: Board) -> list[int]:
     if board.is_maximizer:
         bestScore = -math.inf
     else:
         bestScore = math.inf
 
-    bestMove: List[Tuple[int, int]] = []
+    bestMove: list[tuple[int, int]] = []
     for move in board.get_possible_moves():
         board.make_move(move)
         score = minimax(board)
@@ -176,8 +177,8 @@ def get_best_moves(board: Board) -> List[int]:
 
 
 def apply_best_moves(
-    boards: List[Board], finished_boards: Optional[List[Board]] = None
-) -> List[Board]:
+    boards: list[Board], finished_boards: Optional[list[Board]] = None
+) -> list[Board]:
     if finished_boards == None:
         finished_boards = []
     ongoing_boards = []
@@ -225,6 +226,7 @@ def determine_entropy(counts: list[int]) -> float:
         entropy += -(count / total_counts) * np.log2(count / total_counts)
     return entropy
 
+
 # goes over number of unique subsequences of tic tac toe
 def generate_tree(board: Board, move_search: Callable[..., list[int]]) -> None:
     if board.is_over():
@@ -236,10 +238,10 @@ def generate_tree(board: Board, move_search: Callable[..., list[int]]) -> None:
         children.append(_board)
         generate_tree(_board, move_search)
     board.children = children
-                
+
 
 # goes over number of unique subsequences of tic tac toe
-def tree_walk(board: Board, move_search: Callable[..., list[int]]) -> Tuple[float, int]:
+def tree_walk(board: Board, move_search: Callable[..., list[int]]) -> tuple[float, int]:
     if board.is_over():
         return (0, 10 - len(board.moves_played))
     counts = []
@@ -253,25 +255,29 @@ def tree_walk(board: Board, move_search: Callable[..., list[int]]) -> Tuple[floa
         total_entropy += extra_entropy
         board.undo()
     local_entropy = determine_entropy(counts)
-    return (total_entropy+local_entropy, seen)
+    return (total_entropy + local_entropy, seen)
 
-def entropy(subseq, trie) -> float:
+
+def entropy(subseq: list[int], trie: Trie) -> float:
     node = trie.get_sub_node(subseq)
     counts = [child.game_count for child in node]
-    #sum of array
+    # sum of array
     total_count = sum(counts)
-    #drop 0 counts
+    # drop 0 counts
     counts = [count for count in counts if count != 0]
-    entropy = [(-count/total_count) * math.log(count/total_count) for count in counts]
+    entropy = [
+        (-count / total_count) * math.log(count / total_count) for count in counts
+    ]
     return sum(entropy)
 
-def avg_entropy(data_set, trie):
+
+def avg_entropy(data_set: list[list[int]], trie: Trie):
     total_entropy = 0
     for sample in data_set:
         for i in range(len(sample)):
             total_entropy += entropy(sample[:i], trie)
 
-    return total_entropy / (10*len(data_set))
+    return total_entropy / (10 * len(data_set))
 
 
 """

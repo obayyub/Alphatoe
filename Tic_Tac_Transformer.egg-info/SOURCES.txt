@@ -5,8 +5,11 @@ Tic_Tac_Transformer.egg-info/SOURCES.txt
 Tic_Tac_Transformer.egg-info/dependency_links.txt
 Tic_Tac_Transformer.egg-info/requires.txt
 Tic_Tac_Transformer.egg-info/top_level.txt
-src/__init__.py
-src/game.py
-src/model.py
-src/trie.py
+alphatoe/__init__.py
+alphatoe/data.py
+alphatoe/evals.py
+alphatoe/game.py
+alphatoe/plot.py
+alphatoe/train.py
+alphatoe/trie.py
 tests/test_game.py

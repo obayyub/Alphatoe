@@ -1,13 +1,15 @@
 import math
 
-import numpy as np
 import torch as t
 from torch.nn import functional as F
+from torch import Tensor
 
 from alphatoe.game import Board, apply_best_moves, generate_all_games
 
+from typing import Optional
 
-def gen_games(gametype="all"):
+
+def gen_games(gametype: str = "all"):
     board = [Board()]
 
     if gametype == "all":
@@ -17,6 +19,9 @@ def gen_games(gametype="all"):
     elif gametype == "strat":
         print("Generating strategic games...")
         games = apply_best_moves(board)
+
+    else:
+        raise ValueError(f"gametype must be one of 'all' or 'strat', not {gametype}")
 
     print(f"Generated {len(games)} games")
 
@@ -33,7 +38,7 @@ def gen_games(gametype="all"):
     return games, moves
 
 
-def gen_data_labels(moves):
+def gen_data_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
     data = moves[:, :-1]
     labels = moves[:, 1:]
     print(labels.shape)
@@ -41,13 +46,19 @@ def gen_data_labels(moves):
     return data, labels
 
 
-def gen_data_labels_one_hot(labels):
-    encoded_labels = F.one_hot(labels).to(t.float)
+def gen_data_labels_one_hot(labels: Tensor) -> Tensor:
+    encoded_labels: Tensor = F.one_hot(labels).to(t.float)
     print("One hot encoded labels")
     return encoded_labels
 
 
-def train_test_split(data, labels, split_ratio=0.8, device=None, seed=None):
+def train_test_split(
+    data: Tensor,
+    labels: Tensor,
+    split_ratio: float = 0.8,
+    device: Optional[str] = None,
+    seed: Optional[int] = None,
+):
     if seed is not None:
         t.random.manual_seed(seed)
 
@@ -66,7 +77,12 @@ def train_test_split(data, labels, split_ratio=0.8, device=None, seed=None):
     return (data[train_inds], labels[train_inds], data[test_inds], labels[test_inds])
 
 
-def gen_data(gametype, split_ratio=0.8, device=None, seed=None):
+def gen_data(
+    gametype: str,
+    split_ratio: float = 0.8,
+    device: Optional[str] = None,
+    seed: Optional[int] = None,
+):
     _, moves = gen_games(gametype)
     data, labels = gen_data_labels(moves)
     encoded_labels = gen_data_labels_one_hot(labels)
