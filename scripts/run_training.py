@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 from datetime import datetime
+import pandas as pd
 
 import torch
 from transformer_lens import HookedTransformerConfig, HookedTransformer
@@ -49,7 +50,7 @@ def main(args: argparse.Namespace):
         model.parameters(), lr=args.lr, weight_decay=args.weight_decay
     )
 
-    train.train(
+    model, training_data = train.train(
         model,
         train_data,
         train_labels,
@@ -58,10 +59,14 @@ def main(args: argparse.Namespace):
         optimizer=optimizer,
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
+        save_losses=args.save_losses,
+        save_checkpoints=args.save_checkpoints,
     )
 
     save_model(model, args.experiment_name, timestamp)
     save_params(args, timestamp)
+    if args.save_losses or args.save_checkpoints:
+        save_training_data(training_data, args.experiment_name, timestamp)
 
 
 def check_args(args: argparse.Namespace):
@@ -87,7 +92,14 @@ def load_model(model_name: str) -> HookedTransformer:
     return torch.load(f"{model_name}")
 
 
-def get_most_recent_file(directory):
+def save_training_data(df: pd.DataFrame, experiment_name: str, timestamp: str):
+    df.to_csv(f"{experiment_name} training data-{timestamp}.csv")
+
+
+# TODO: load in training data if we're fine tuning, and append the new data to old dataframe
+
+
+def get_most_recent_file(directory: str):
     files = os.listdir(directory)
 
     timestamp_regex = re.compile(r"(\d{8}-\d{6})\.pt")
@@ -131,5 +143,7 @@ if __name__ == "__main__":
     ap.add_argument("--normalization_type", type=str, default=None)
     ap.add_argument("--device", type=str, default="cuda")
     ap.add_argument("--seed", type=int, default=1337)
+    ap.add_argument("--save_losses", type=bool, default=True)
+    ap.add_argument("--save_checkpoints", type=bool, default=True)
 
     main(ap.parse_args())
