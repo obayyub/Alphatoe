@@ -14,11 +14,6 @@ from alphatoe import data, train
 
 def main(args: argparse.Namespace):
     check_args(args)
-    if args.fine_tune == "recent":
-        dir = os.path.dirname(os.path.realpath(__file__))
-        model_name = get_most_recent_file(f"{dir}/")
-    else:
-        model_name = args.model_name
 
     cfg = HookedTransformerConfig(
         n_layers=args.n_layers,
@@ -42,7 +37,20 @@ def main(args: argparse.Namespace):
         device=args.device,
         seed=args.seed,
     )
-    model = load_model(model_name).to(cfg.device)
+
+    if args.fine_tune == None:
+        model = HookedTransformer(cfg)
+    elif args.fine_tune == "recent":
+        dir = os.path.dirname(os.path.realpath(__file__))
+        model_name = get_most_recent_file(f"{dir}/")
+        model = HookedTransformer(cfg)
+        model = model.load_state_dict(get_weights(model_name))
+    else:
+        model_name = args.model_name
+        model = HookedTransformer(cfg)
+        model = model.load_state_dict(get_weights(model_name))
+
+    model.to(cfg.device)
 
     timestamp = make_timestamp()
 
@@ -85,10 +93,10 @@ def save_params(args: argparse.Namespace, timestamp: str) -> None:
 
 
 def save_model(m: HookedTransformer, experiment_name: str, timestamp: str):
-    torch.save(m, f"{experiment_name}-{timestamp}.pt")
+    torch.save(m.state_dict(), f"{experiment_name}-{timestamp}.pt")
 
 
-def load_model(model_name: str) -> HookedTransformer:
+def get_weights(model_name: str):
     return torch.load(f"{model_name}")
 
 
