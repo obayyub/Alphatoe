@@ -4,13 +4,16 @@ import einops
 import torch as t
 from torch import Tensor
 from transformer_lens import HookedTransformer
+from copy import deepcopy
+import pandas as pd
 
 
 # constants
 DEFAULT_LR = 1e-5
 DEFAULT_WD = 1e-4
 DEFAULT_EPOCHS = 40
-DEFAULT_BATCH_SIZE = 4096 * 4
+# Super important that this is 2x2
+DEFAULT_BATCH_SIZE = 4096 * 2 * 2
 
 
 def rearrange(t: Tensor):
@@ -31,19 +34,27 @@ def train(
     loss_fn: Callable[..., Any] = t.nn.functional.cross_entropy,
     n_epochs: int = DEFAULT_EPOCHS,
     batch_size: int = DEFAULT_BATCH_SIZE,
-) -> HookedTransformer:
+    save_losses: bool = True,
+    save_checkpoints: bool = True,
+):
     """Trains models with specified data and hyperparameters.
 
     Test inference runs for every update on the entire set.
     """
-    train_losses: list[float] = list()
-    test_losses: list[float] = list()
+
+    if save_losses:
+        train_losses: list[float] = list()
+        test_losses: list[float] = list()
+
+    if save_checkpoints:
+        model_checkpoints = []
 
     if optimizer is None:
         optimizer = t.optim.AdamW(
             model.parameters(), lr=DEFAULT_LR, weight_decay=DEFAULT_WD
         )
 
+    # TODO: should probably return losses and model once per epoch
     for epoch in range(n_epochs):
         for batch in range(0, len(train_data), batch_size):
             input_batch = train_data[batch : batch + batch_size]
@@ -53,7 +64,8 @@ def train(
             train_loss = loss_fn(rearrange(logits_batch), rearrange(label_batch))
 
             train_loss.backward()
-            train_losses.append(train_loss.item())
+            if save_losses:
+                train_losses.append(train_loss.item())
             optimizer.step()
             optimizer.zero_grad()
 
@@ -61,10 +73,24 @@ def train(
                 # test inference runs for every update on the whole test set
                 test_logits = model(test_data)
                 test_loss = loss_fn(rearrange(test_logits), rearrange(test_labels))
-                test_losses.append(test_loss.item())
+                if save_losses:
+                    test_losses.append(test_loss.item())
+            if save_checkpoints:
+                model_checkpoints.append(deepcopy(model.state_dict()))
 
         print(
             f"Epoch {epoch} | Train Loss: {train_loss.item()} | Test Loss: {test_loss.item()}"
         )
 
-    return model
+    df = pd.DataFrame({})
+    if save_losses:
+        print("Saving train and test losses...")
+        df["test losses"] = test_losses
+        df["train losses"] = train_losses
+        print("Train and test losses saved!")
+    if save_checkpoints:
+        print("Saving model checkponits...")
+        df["model checkpoints"] = model_checkpoints
+        print("Model checkpoints saved!")
+
+    return (model, df)
