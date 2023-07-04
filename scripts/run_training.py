@@ -1,6 +1,9 @@
 import json
 import datetime
 import argparse
+import os
+import re
+from datetime import datetime
 
 import torch
 from transformer_lens import HookedTransformerConfig, HookedTransformer
@@ -10,6 +13,11 @@ from alphatoe import data, train
 
 def main(args: argparse.Namespace):
     check_args(args)
+    if args.fine_tune == "recent":
+        dir = os.path.dirname(os.path.realpath(__file__))
+        model_name = get_most_recent_file(f"{dir}/")
+    else:
+        model_name = args.model_name
 
     cfg = HookedTransformerConfig(
         n_layers=args.n_layers,
@@ -31,9 +39,9 @@ def main(args: argparse.Namespace):
         args.gametype,
         split_ratio=args.train_test_split,
         device=args.device,
-        seed=args.seed
+        seed=args.seed,
     )
-    model = HookedTransformer(cfg).to(cfg.device)
+    model = load_model(model_name).to(cfg.device)
 
     timestamp = make_timestamp()
 
@@ -61,11 +69,9 @@ def check_args(args: argparse.Namespace):
 
 
 def make_timestamp():
-    t = datetime.datetime.now()
+    t = datetime.now()
 
-    return (
-        f"{t.year}{t.month:02d}{t.day:02d}" f"-{t.hour:02d}{t.minute:02d}{t.second:02d}"
-    )
+    return f"{t.year}{t.month:02d}{t.day:02d}{t.hour:02d}{t.minute:02d}{t.second:02d}"
 
 
 def save_params(args: argparse.Namespace, timestamp: str) -> None:
@@ -77,12 +83,40 @@ def save_model(m: HookedTransformer, experiment_name: str, timestamp: str):
     torch.save(m, f"{experiment_name}-{timestamp}.pt")
 
 
+def load_model(model_name: str) -> HookedTransformer:
+    return torch.load(f"{model_name}")
+
+
+def get_most_recent_file(directory):
+    files = os.listdir(directory)
+
+    timestamp_regex = re.compile(r"(\d{8}-\d{6})\.pt")
+
+    files = [f for f in files if timestamp_regex.search(f)]
+
+    if files == []:
+        raise ValueError("You need to have run models before you can fine tune them!")
+
+    files.sort(
+        key=lambda f: datetime.strptime(
+            timestamp_regex.search(f).group(1), "%Y%m%d-%H%M%S"
+        ),
+        reverse=True,
+    )
+
+    most_recent_file = files[0]  # The most recent file
+    return most_recent_file
+
+
+# Get the most recent file in the "scripts" directory
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-
     ap.add_argument("experiment_name", type=str)
     ap.add_argument("gametype", type=str, choices=["strat", "all"])
 
+    ap.add_argument("--fine_tune", type=str)
     ap.add_argument("--n_epochs", type=int, default=40)
     ap.add_argument("--lr", type=float, default=1e-5)
     ap.add_argument("--weight_decay", type=float, default=1e-4)
