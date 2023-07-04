@@ -15,7 +15,68 @@ from alphatoe import data, train
 def main(args: argparse.Namespace):
     check_args(args)
 
-    cfg = HookedTransformerConfig(
+    # This is a bit messy, but the logic is clear. If we end up needing more script args we can extract this
+    if args.fine_tune == None:
+        cfg = create_hooked_transformer_config(args)
+        model = HookedTransformer(cfg)
+    elif args.fine_tune == "recent":
+        dir = os.path.dirname(os.path.realpath(__file__))
+        model_name = get_most_recent_file(f"{dir}/")
+        args = load_config(model_name)
+        cfg = create_hooked_transformer_config(args)
+        model = HookedTransformer(cfg)
+        model = model.load_state_dict(load_weights(model_name))
+    else:
+        model_name = args.model_name
+        args = load_config(model_name)
+        cfg = create_hooked_transformer_config(args)
+        model = HookedTransformer(cfg)
+        model = model.load_state_dict(load_weights(model_name))
+
+    model.to(cfg.device)
+
+    train_data, train_labels, test_data, test_labels = data.gen_data(
+        args.gametype,
+        split_ratio=args.train_test_split,
+        device=args.device,
+        seed=args.seed,
+    )
+
+    timestamp = make_timestamp()
+
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=args.lr, weight_decay=args.weight_decay
+    )
+
+    print(f"model checkpoints is: {args.save_checkpoints}")
+    print(f"layer count is: {args.n_layers}")
+    model, training_data = train.train(
+        model,
+        train_data,
+        train_labels,
+        test_data,
+        test_labels,
+        optimizer=optimizer,
+        n_epochs=args.n_epochs,
+        batch_size=args.batch_size,
+        save_losses=args.save_losses,
+        save_checkpoints=args.save_checkpoints,
+    )
+
+    print("Saving model weights to disk...")
+    save_weights(model, args.experiment_name, timestamp)
+    print("Model weights saved!")
+    save_config(args, timestamp)
+    if args.save_losses or args.save_checkpoints:
+        print("Saving training data to disk...")
+        save_training_data(training_data, args.experiment_name, timestamp)
+        print("Training data saved!")
+
+
+def create_hooked_transformer_config(
+    args: argparse.Namespace,
+) -> HookedTransformerConfig:
+    return HookedTransformerConfig(
         n_layers=args.n_layers,
         n_heads=args.n_heads,
         d_model=args.d_model,
@@ -31,51 +92,6 @@ def main(args: argparse.Namespace):
         seed=args.seed,
     )
 
-    train_data, train_labels, test_data, test_labels = data.gen_data(
-        args.gametype,
-        split_ratio=args.train_test_split,
-        device=args.device,
-        seed=args.seed,
-    )
-
-    if args.fine_tune == None:
-        model = HookedTransformer(cfg)
-    elif args.fine_tune == "recent":
-        dir = os.path.dirname(os.path.realpath(__file__))
-        model_name = get_most_recent_file(f"{dir}/")
-        model = HookedTransformer(cfg)
-        model = model.load_state_dict(get_weights(model_name))
-    else:
-        model_name = args.model_name
-        model = HookedTransformer(cfg)
-        model = model.load_state_dict(get_weights(model_name))
-
-    model.to(cfg.device)
-
-    timestamp = make_timestamp()
-
-    optimizer = torch.optim.AdamW(
-        model.parameters(), lr=args.lr, weight_decay=args.weight_decay
-    )
-
-    model, training_data = train.train(
-        model,
-        train_data,
-        train_labels,
-        test_data,
-        test_labels,
-        optimizer=optimizer,
-        n_epochs=args.n_epochs,
-        batch_size=args.batch_size,
-        save_losses=args.save_losses,
-        save_checkpoints=args.save_checkpoints,
-    )
-
-    save_model(model, args.experiment_name, timestamp)
-    save_params(args, timestamp)
-    if args.save_losses or args.save_checkpoints:
-        save_training_data(training_data, args.experiment_name, timestamp)
-
 
 def check_args(args: argparse.Namespace):
     assert args.d_model % args.d_head == 0
@@ -84,19 +100,24 @@ def check_args(args: argparse.Namespace):
 def make_timestamp():
     t = datetime.now()
 
-    return f"{t.year}{t.month:02d}{t.day:02d}{t.hour:02d}{t.minute:02d}{t.second:02d}"
+    return f"{t.year}{t.month:02d}{t.day:02d}-{t.hour:02d}{t.minute:02d}{t.second:02d}"
 
 
-def save_params(args: argparse.Namespace, timestamp: str) -> None:
+def save_config(args: argparse.Namespace, timestamp: str) -> None:
     with open(f"{args.experiment_name}-{timestamp}.json", "w+") as f:
         json.dump(vars(args), f)
 
 
-def save_model(m: HookedTransformer, experiment_name: str, timestamp: str):
+def load_config(model_name: str):
+    with open(f"{model_name}.json", "r") as f:
+        return json.load(f)
+
+
+def save_weights(m: HookedTransformer, experiment_name: str, timestamp: str):
     torch.save(m.state_dict(), f"{experiment_name}-{timestamp}.pt")
 
 
-def get_weights(model_name: str):
+def load_weights(model_name: str):
     return torch.load(f"{model_name}")
 
 
@@ -124,11 +145,8 @@ def get_most_recent_file(directory: str):
         reverse=True,
     )
 
-    most_recent_file = files[0]  # The most recent file
+    most_recent_file = files[0][:-3]  # The most recent file without extension
     return most_recent_file
-
-
-# Get the most recent file in the "scripts" directory
 
 
 if __name__ == "__main__":
@@ -151,7 +169,7 @@ if __name__ == "__main__":
     ap.add_argument("--normalization_type", type=str, default=None)
     ap.add_argument("--device", type=str, default="cuda")
     ap.add_argument("--seed", type=int, default=1337)
-    ap.add_argument("--save_losses", type=bool, default=True)
-    ap.add_argument("--save_checkpoints", type=bool, default=True)
+    ap.add_argument("--save_losses", action="store_true")
+    ap.add_argument("--save_checkpoints", action="store_true")
 
     main(ap.parse_args())

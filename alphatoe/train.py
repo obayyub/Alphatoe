@@ -55,6 +55,7 @@ def train(
         )
 
     # TODO: should probably return losses and model once per epoch
+    # TODO: something something return model_checkpoints on a log scale
     for epoch in range(n_epochs):
         for batch in range(0, len(train_data), batch_size):
             input_batch = train_data[batch : batch + batch_size]
@@ -84,13 +85,13 @@ def train(
 
     df = pd.DataFrame({})
     if save_losses:
-        print("Saving train and test losses...")
+        print("Creating train and test loss dataframe...")
         df["test losses"] = test_losses
         df["train losses"] = train_losses
-        print("Train and test losses saved!")
+        print("Train and test loss dataframe created!")
     if save_checkpoints:
-        print("Saving model checkponits...")
+        print("Saving model checkpoint dataframe...")
         df["model checkpoints"] = model_checkpoints
-        print("Model checkpoints saved!")
+        print("Model checkpoints dataframe created!")
 
     return (model, df)
