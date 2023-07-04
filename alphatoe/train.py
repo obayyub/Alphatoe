@@ -1,7 +1,8 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 import einops
 import torch as t
+from torch import Tensor
 from transformer_lens import HookedTransformer
 
 
@@ -12,7 +13,7 @@ DEFAULT_EPOCHS = 40
 DEFAULT_BATCH_SIZE = 4096 * 4
 
 
-def rearrange(t):
+def rearrange(t: Tensor):
     """Formatting tensors to play nicely with F.cross_entropy.
 
     This can also be achieved by permuting the last two dimensions, but this should be faster.
@@ -27,7 +28,7 @@ def train(
     test_data: t.Tensor,
     test_labels: t.Tensor,
     optimizer: Optional[t.optim.Optimizer] = None,
-    loss_fn: Callable = t.nn.functional.cross_entropy,
+    loss_fn: Callable[..., Any] = t.nn.functional.cross_entropy,
     n_epochs: int = DEFAULT_EPOCHS,
     batch_size: int = DEFAULT_BATCH_SIZE,
 ) -> HookedTransformer:
@@ -35,8 +36,8 @@ def train(
 
     Test inference runs for every update on the entire set.
     """
-    train_losses = list()
-    test_losses = list()
+    train_losses: list[float] = list()
+    test_losses: list[float] = list()
 
     if optimizer is None:
         optimizer = t.optim.AdamW(

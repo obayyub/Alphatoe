@@ -3,80 +3,67 @@ from typing import Optional, List
 
 
 class TrieNode:
-
-  def __init__(self) -> None:
-    self.children: dict[int, TrieNode] = {}
-    self.is_end_of_game: bool = False
-    self.game_count: int = 0
+    def __init__(self) -> None:
+        self.children: dict[int, TrieNode] = {}
+        self.is_end_of_game: bool = False
+        self.game_count: int = 0
 
 
 class Trie:
+    def __init__(self) -> None:
+        self.root: TrieNode = TrieNode()
 
-  def __init__(self) -> None:
-    self.root: TrieNode = TrieNode()
+    def insert(self, game: List[int]) -> None:
+        node = self.root
+        for move in game:
+            if move not in node.children:
+                node.children[move] = TrieNode()
+            node.game_count += 1
+            node = node.children[move]
+        node.is_end_of_game = True
 
-  def insert(self, game: List[int]) -> None:
-    node = self.root
-    for move in game:
-      if move not in node.children:
-        node.children[move] = TrieNode()
-      node.game_count += 1
-      node = node.children[move]
-    node.is_end_of_game = True
+    def get_sub_node(self, initial_moves: List[int]) -> list[TrieNode]:
+        node = self.root
+        for move in initial_moves:
+            node = node.children[move]
+        return list(node.children.values())
 
-  def search(self, game: List[int]) -> None:
-    node = self.root
-    for move in game:
-      if move not in node.children:
-        return False
-      node = node.children[move]
-    return node.is_end_of_game
+    def partial_game_entropy(self, initial_moves: List[int]) -> float:
+        node = self.root
+        for move in initial_moves:
+            if move not in node.children:
+                raise ValueError(f"Game prefix {initial_moves} does not exist in Trie.")
+            node = node.children[move]
 
-  def get_sub_node(self, initial_moves: List[int]) -> int:
-    node = self.root
-    for move in initial_moves:
-      if move not in node.children:
-        return 0
-      node = node.children[move]
-    return node.children.values()
+        entropy = 0
+        for child_node in node.children.values():
+            prob = child_node.game_count / node.game_count
+            # entropy in nats
+            entropy -= prob * math.log(prob)
 
-  def partial_game_entropy(self, initial_moves: List[int]) -> float:
-    node = self.root
-    for move in initial_moves:
-      if move not in node.children:
-        raise ValueError(
-          f"Game prefix {initial_moves} does not exist in Trie.")
-      node = node.children[move]
+        return entropy * node.game_count
 
-    entropy = 0
-    for child_node in node.children.values():
-      prob = child_node.game_count / node.game_count
-      #entropy in nats
-      entropy -= prob * math.log(prob)
+    def entropy(self, node: TrieNode) -> float:
+        entropy = 0
+        for child_node in node.children.values():
+            prob = child_node.game_count / node.game_count
+            if prob > 0:
+                # entropy in nats
+                entropy -= prob * math.log(prob)
 
-    return entropy * node.game_count
+        return entropy * node.game_count
 
-  def entropy(self, node: TrieNode) -> float:
-    entropy = 0
-    for child_node in node.children.values():
-      prob = child_node.game_count / node.game_count
-      if prob > 0:
-        #entropy in nats
-        entropy -= prob * math.log(prob)
+    def total_entropy(self, node: Optional[TrieNode] = None) -> float:
+        if node is None:
+            node = self.root
 
-    return entropy * node.game_count
+        total_entropy = self.entropy(node)
 
-  def total_entropy(self, node: Optional[TrieNode] = None) -> float:
-    if node is None:
-      node = self.root
+        for child in node.children.values():
+            total_entropy += self.total_entropy(child)
 
-    total_entropy = self.entropy(node)
+        return total_entropy
 
-    for child in node.children.values():
-      total_entropy += self.total_entropy(child)
-
-    return total_entropy
-
-  def average_entropy(self) -> float:
-    total_tokens = self.root.game_count * 10
-    return self.total_entropy() / total_tokens
+    def average_entropy(self) -> float:
+        total_tokens = self.root.game_count * 10
+        return self.total_entropy() / total_tokens
