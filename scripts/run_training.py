@@ -9,7 +9,7 @@ import pandas as pd
 import torch
 from transformer_lens import HookedTransformerConfig, HookedTransformer
 
-from alphatoe import data, train
+from alphatoe import data, train, evals
 
 
 def main(args: argparse.Namespace):
@@ -71,6 +71,12 @@ def main(args: argparse.Namespace):
         print("Saving training data to disk...")
         save_training_data(training_data, args.experiment_name, timestamp)
         print("Training data saved!")
+
+    if args.eval_model:
+        num_games = 2000
+        games = evals.sample_games(model, 1, num_games)
+        error_rate = evals.error_rate(games)
+        print(f"Illegal move percentage for {num_games} is {error_rate} ")
 
 
 def create_hooked_transformer_config(
@@ -171,5 +177,6 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=1337)
     ap.add_argument("--save_losses", action="store_true")
     ap.add_argument("--save_checkpoints", action="store_true")
+    ap.add_argument("--eval_model", action="true")
 
     main(ap.parse_args())
