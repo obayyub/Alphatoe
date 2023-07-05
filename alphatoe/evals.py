@@ -2,9 +2,12 @@ from torch import Tensor
 from transformer_lens import HookedTransformer
 import torch as t
 import tqdm
+from alphatoe.game import Board
 
 
-def _sample_game(model: HookedTransformer, temp: float) -> list[int]:
+def _sample_game(
+    model: HookedTransformer, temp: float, probabilistic=False
+) -> list[int]:
     assert temp > 0
     seq = [10]
     # no grad
@@ -26,15 +29,29 @@ def sample_games(
     return games
 
 
-def _check_illegal_moves(game: list[int]) -> bool:
+# evals return True on model error
+def _check_played_repeat_moves(game: list[int]) -> bool:
     clean_game = [token for token in game if token != 9]
     set_length = len(set(clean_game))
-    return set_length == len(clean_game)
+    return set_length != len(clean_game)
+
+
+def _check_played_after_finished_game(game: list[int]) -> bool:
+    board = Board()
+    for move in game[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return True
+    return False
 
 
 def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
-    return [_check_illegal_moves(game) for game in games]
+    return [
+        _check_played_repeat_moves(game) or _check_played_after_finished_game(game)
+        for game in games
+    ]
 
 
 def error_rate(games: list[list[int]]) -> float:
-    return _check_illegal_moves_again(games).count(False) / len(games)
+    return _check_illegal_moves_again(games).count(True) / len(games)
