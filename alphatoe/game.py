@@ -5,6 +5,8 @@ from enum import Enum
 from copy import deepcopy
 import numpy as np
 from alphatoe.trie import Trie
+import torch
+from torch import Tensor
 
 
 class State(Enum):
@@ -281,12 +283,38 @@ def avg_entropy(data_set: list[list[int]], trie: Trie):
 
 
 """
-This may have a problem because even though we have an equal probability at a given node, when we sample across the game tree, some moves may have more weight in terms of the number of further nodes they generate than others.
-"""
-
-"""
 coin flips
 1. p(H) * log2(p(H)) + p(T) * log2(p(T))
 2. p(H | H) * log2(p(H | H)) + p(T | H) * log2(p(T | H)) + p(H | T) * log2(p(H | T)) + p(T | T) * log2(p(T | T)) 
 
 """
+
+
+def probabilistic_guess(seq: Tensor):
+    if seq[-1] == 9:
+        out = torch.zeros(10)
+        out[-1] = 1
+        return out
+    moves_left = 10 - len(seq)
+    logits = torch.zeros(10) - torch.inf
+    if moves_left > 0:
+        move_prob = 1 / moves_left
+    elif moves_left == 0:
+        logits[-1] = 1
+        return logits
+    else:
+        raise ValueError(f"Length of sequence must be less than or equal to 10")
+    for move in range(9):
+        if move not in seq:
+            logits[move] = move_prob
+    assert sum(torch.softmax(logits, dim=0)) == 1
+    return logits
+
+
+def autoregressive_guess(seq: list[int]):
+    logits = []
+    for i in range(1, len(seq) + 1):
+        logits.append(probabilistic_guess(seq[:i]))
+
+    # The unsqueeze is just to make our evals happy
+    return torch.stack(logits).unsqueeze(dim=0)
