@@ -44,6 +44,9 @@ class Board:
             return True
         else:
             return False
+        
+    def get_state(self) -> State:
+        return self.game_state
 
     # External
     def get_possible_moves(self) -> list[int]:
