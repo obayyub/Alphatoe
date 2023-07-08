@@ -66,9 +66,12 @@ def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
 def get_error_rate(games: list[list[int]]) -> float:
     return _check_illegal_moves_again(games).count(True) / len(games)
 
-def evals(games: list[list[int]]) -> tuple(float, float, float, float):
-    error_rate = get_error_rate(games)
-    repeat_moves = _check_played_repeat_moves(games[0]) / len(games)
-    after_over = _check_played_after_over_game(games[0]) / len(games)
-    after_draw = _check_played_after_draw_game(games[0]) / len(games)
-    return error_rate, repeat_moves, after_over, after_draw
+def eval_model(games: list[list[int]]) -> dict[str, float]:
+    evals = {
+        "error rate": get_error_rate(games),
+        "repeat moves": _check_played_repeat_moves(games[0]) / len(games),
+        "after over": _check_played_after_over_game(games[0]) / len(games),
+        "after draw": _check_played_after_draw_game(games[0]) / len(games),
+    }
+
+    return evals
