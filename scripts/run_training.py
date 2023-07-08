@@ -13,6 +13,8 @@ from alphatoe import data, train, evals
 
 
 def main(args: argparse.Namespace):
+    dir = os.path.dirname(os.path.realpath(__file__))
+    model_dir = os.path.join(dir, "models/")
     check_args(args)
 
     # This is a bit messy, but the logic is clear. If we end up needing more script args we can extract this
@@ -20,18 +22,17 @@ def main(args: argparse.Namespace):
         cfg = create_hooked_transformer_config(args)
         model = HookedTransformer(cfg)
     elif args.fine_tune == "recent":
-        dir = os.path.dirname(os.path.realpath(__file__))
-        model_name = get_most_recent_file(f"{dir}/")
-        args = load_config(model_name)
+        model_name = get_most_recent_file(f"{model_dir}/")
+        args = load_config(model_name, model_dir)
         cfg = create_hooked_transformer_config(args)
         model = HookedTransformer(cfg)
-        model = model.load_state_dict(load_weights(model_name))
+        model = model.load_state_dict(load_weights(model_name, model_dir))
     else:
         model_name = args.model_name
-        args = load_config(model_name)
+        args = load_config(model_name, model_dir)
         cfg = create_hooked_transformer_config(args)
         model = HookedTransformer(cfg)
-        model = model.load_state_dict(load_weights(model_name))
+        model = model.load_state_dict(load_weights(model_name, model_dir))
 
     model.to(cfg.device)
 
@@ -64,12 +65,12 @@ def main(args: argparse.Namespace):
     )
 
     print("Saving model weights to disk...")
-    save_weights(model, args.experiment_name, timestamp)
+    save_weights(model, args.experiment_name, timestamp, model_dir)
     print("Model weights saved!")
-    save_config(args, timestamp)
+    save_config(args, timestamp, model_dir)
     if args.save_losses or args.save_checkpoints:
         print("Saving training data to disk...")
-        save_training_data(training_data, args.experiment_name, timestamp)
+        save_training_data(training_data, args.experiment_name, timestamp, model_dir)
         print("Training data saved!")
 
     if args.eval_model:
@@ -109,26 +110,26 @@ def make_timestamp():
     return f"{t.year}{t.month:02d}{t.day:02d}-{t.hour:02d}{t.minute:02d}{t.second:02d}"
 
 
-def save_config(args: argparse.Namespace, timestamp: str) -> None:
-    with open(f"{args.experiment_name}-{timestamp}.json", "w+") as f:
-        json.dump(vars(args), f)
+def save_config(args: argparse.Namespace, timestamp: str, model_dir: str) -> None:
+    with open(f"{model_dir}{args.experiment_name}-{timestamp}.json", "w+") as f:
+        json.dump(vars(args), f, indent=4)
 
 
-def load_config(model_name: str):
-    with open(f"{model_name}.json", "r") as f:
+def load_config(model_name: str, model_dir:str):
+    with open(f"{model_dir}{model_name}.json", "r") as f:
         return json.load(f)
 
 
-def save_weights(m: HookedTransformer, experiment_name: str, timestamp: str):
-    torch.save(m.state_dict(), f"{experiment_name}-{timestamp}.pt")
+def save_weights(m: HookedTransformer, experiment_name: str, timestamp: str, model_dir: str):
+    torch.save(m.state_dict(), f"{model_dir}{experiment_name}-{timestamp}.pt")
 
 
-def load_weights(model_name: str):
-    return torch.load(f"{model_name}")
+def load_weights(model_name: str, model_dir: str):
+    return torch.load(f"{model_dir}{model_name}")
 
 
-def save_training_data(df: pd.DataFrame, experiment_name: str, timestamp: str):
-    df.to_csv(f"{experiment_name} training data-{timestamp}.csv")
+def save_training_data(df: pd.DataFrame, experiment_name: str, timestamp: str, model_dir: str):
+    df.to_csv(f"{model_dir}{experiment_name} training data-{timestamp}.csv")
 
 
 # TODO: load in training data if we're fine tuning, and append the new data to old dataframe
@@ -177,6 +178,6 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=1337)
     ap.add_argument("--save_losses", action="store_true")
     ap.add_argument("--save_checkpoints", action="store_true")
-    ap.add_argument("--eval_model", action="true")
+    ap.add_argument("--eval_model", action="store_true")
 
     main(ap.parse_args())
