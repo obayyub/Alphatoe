@@ -2,7 +2,7 @@ from torch import Tensor
 from transformer_lens import HookedTransformer
 import torch as t
 import tqdm
-from alphatoe.game import Board
+from alphatoe.game import Board, State
 
 
 def _sample_game(
@@ -12,7 +12,8 @@ def _sample_game(
     seq = [10]
     # no grad
     with t.no_grad():
-        for _ in range(8):
+        # sample 9 moves plus one end game token
+        for _ in range(9):
             logits: Tensor = model(t.tensor(seq))[0, -1]
             probs = t.softmax(logits / temp, dim=0)
             token: int = t.multinomial(probs, num_samples=1).item()
@@ -36,22 +37,41 @@ def _check_played_repeat_moves(game: list[int]) -> bool:
     return set_length != len(clean_game)
 
 
-def _check_played_after_finished_game(game: list[int]) -> bool:
+def _check_played_after_over_game(game: list[int]) -> bool:
     board = Board()
     for move in game[1:]:
-        try:
-            board.make_move(move)
-        except:
+        if board.game_state == State.OVER and move != 9:
             return True
+        board.make_move(move)
+    return False
+    
+def _check_played_after_draw_game(game: list[int]) -> bool:
+    board = Board()
+    for move in game[1:]:
+        if board.game_state == State.DRAW and move != 9:
+            return True
+        board.make_move(move)
     return False
 
 
 def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
     return [
-        _check_played_repeat_moves(game) or _check_played_after_finished_game(game)
+        _check_played_repeat_moves(game) or 
+        _check_played_after_over_game(game) or 
+        _check_played_after_draw_game(game)
         for game in games
     ]
 
 
-def error_rate(games: list[list[int]]) -> float:
+def get_error_rate(games: list[list[int]]) -> float:
     return _check_illegal_moves_again(games).count(True) / len(games)
+
+def eval_model(games: list[list[int]]) -> dict[str, float]:
+    evals = {
+        "error rate": get_error_rate(games),
+        "repeat moves": _check_played_repeat_moves(games[0]) / len(games),
+        "after over": _check_played_after_over_game(games[0]) / len(games),
+        "after draw": _check_played_after_draw_game(games[0]) / len(games),
+    }
+
+    return evals
