@@ -13,7 +13,7 @@ def _sample_game(
     # no grad
     with t.no_grad():
         # sample 9 moves plus one end game token
-        for _ in range(9):
+        for _ in range(10):
             logits: Tensor = model(t.tensor(seq))[0, -1]
             probs = t.softmax(logits / temp, dim=0)
             token: int = t.multinomial(probs, num_samples=1).item()
@@ -36,22 +36,40 @@ def _check_played_repeat_moves(game: list[int]) -> bool:
     set_length = len(set(clean_game))
     return set_length != len(clean_game)
 
-def _check_if_legal_moves(game: list[int]) -> bool:
+def _check_if_illegal_moves(game: list[int]) -> bool:
     board = Board()
-    for move in game[1:]:
-        try:
-            board.make_move(move)
-        except:
+    for move in game[1:-1]:
+        if board.game_state == State.ONGOING:
+            try:
+                board.make_move(move)
+            except:
+                return True
+        elif move == 9:
+            pass
+        else:
             return True
     return False
 
+def inappropriate_end_state(game: list[int]) -> bool:
+    board = Board()
+    for move in game[1:]:
+        if board.game_state == State.ONGOING and move == 9:
+            return True
+        try:
+            board.make_move(move)
+        except:
+            return False
+    return False
 
 def _check_played_after_player_victory(game: list[int]) -> bool:
     board = Board()
     for move in game[1:]:
         if board.game_state == State.OVER and move != 9:
             return True
-        board.make_move(move)
+        try:
+            board.make_move(move)
+        except:
+            return False
     return False
     
 def _check_played_after_draw_game(game: list[int]) -> bool:
@@ -59,7 +77,10 @@ def _check_played_after_draw_game(game: list[int]) -> bool:
     for move in game[1:]:
         if board.game_state == State.DRAW and move != 9:
             return True
-        board.make_move(move)
+        try:
+            board.make_move(move)
+        except:
+            return False
     return False
 
 
@@ -76,12 +97,23 @@ def get_error_rate(games: list[list[int]]) -> float:
     return _check_illegal_moves_again(games).count(True) / len(games)
 
 def eval_model(games: list[list[int]]) -> dict[str, float]:
+    # repeat_moves = [_check_played_repeat_moves(game) for game in tqdm.tqdm(games)]
+    # play_after_player_victory = [_check_played_after_player_victory(game) for game in games]
+    # play_after_draw_game = [_check_played_after_draw_game(game) for game in games]
+    # inappropriate_end = [inappropriate_end_state(game) for game in games]
+    # illegal_moves_jack = [_check_if_illegal_moves(game) for game in tqdm.tqdm(games)]
+
+    # for idx, games in enumerate(illegal_moves_jack):
+    #     if repeat_moves[idx] or play_after_player_victory[idx] or play_after_draw_game[idx] or inappropriate_end[idx]:
+    #         illegal_moves_jack[idx] = False
+
+
     evals = {
-        "error rate": get_error_rate(games),
-        'illegal moves': _check_illegal_moves_again(games).count(True) / len(games),
-        "repeat moves": _check_played_repeat_moves(games[0]) / len(games),
-        "after over": _check_played_after_player_victory(games[0]) / len(games),
-        "after draw": _check_played_after_draw_game(games[0]) / len(games),
+        'repeat moves': [_check_played_repeat_moves(game) for game in tqdm.tqdm(games)].count(True) / len(games),
+        'play after player victory': [_check_played_after_player_victory(game) for game in games].count(True) / len(games),
+        'play after draw game': [_check_played_after_draw_game(game) for game in games].count(True) / len(games),
+        'inappropriate end state': [inappropriate_end_state(game) for game in games].count(True) / len(games),
+        'total illegal moves, jack': [_check_if_illegal_moves(game) for game in tqdm.tqdm(games)].count(True) / len(games),
     }
 
     return evals

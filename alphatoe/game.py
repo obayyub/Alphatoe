@@ -321,3 +321,13 @@ def autoregressive_guess(seq: list[int]):
 
     # The unsqueeze is just to make our evals happy
     return torch.stack(logits).unsqueeze(dim=0)
+
+def play_game(seq: list[int]):
+    board = Board()
+    for move in seq[1:-1]:
+        try:
+            board.make_move(move)
+        except:
+            print('Invalid game')
+            break
+    board.draw_board()
