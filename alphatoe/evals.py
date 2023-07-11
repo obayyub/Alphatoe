@@ -36,8 +36,17 @@ def _check_played_repeat_moves(game: list[int]) -> bool:
     set_length = len(set(clean_game))
     return set_length != len(clean_game)
 
+def _check_if_legal_moves(game: list[int]) -> bool:
+    board = Board()
+    for move in game[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return True
+    return False
 
-def _check_played_after_over_game(game: list[int]) -> bool:
+
+def _check_played_after_player_victory(game: list[int]) -> bool:
     board = Board()
     for move in game[1:]:
         if board.game_state == State.OVER and move != 9:
@@ -57,7 +66,7 @@ def _check_played_after_draw_game(game: list[int]) -> bool:
 def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
     return [
         _check_played_repeat_moves(game) or 
-        _check_played_after_over_game(game) or 
+        _check_played_after_player_victory(game) or 
         _check_played_after_draw_game(game)
         for game in games
     ]
@@ -69,8 +78,9 @@ def get_error_rate(games: list[list[int]]) -> float:
 def eval_model(games: list[list[int]]) -> dict[str, float]:
     evals = {
         "error rate": get_error_rate(games),
+        'illegal moves': _check_illegal_moves_again(games).count(True) / len(games),
         "repeat moves": _check_played_repeat_moves(games[0]) / len(games),
-        "after over": _check_played_after_over_game(games[0]) / len(games),
+        "after over": _check_played_after_player_victory(games[0]) / len(games),
         "after draw": _check_played_after_draw_game(games[0]) / len(games),
     }
 

@@ -2,7 +2,7 @@
     "experiment_name": "all games test",
     "gametype": "all",
     "fine_tune": null,
-    "n_epochs": 1,
+    "n_epochs": 40,
     "lr": 1e-05,
     "weight_decay": 0.0001,
     "batch_size": 4096,
