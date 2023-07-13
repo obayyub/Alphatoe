@@ -36,6 +36,7 @@ def _check_played_repeat_moves(game: list[int]) -> bool:
     set_length = len(set(clean_game))
     return set_length != len(clean_game)
 
+
 def _check_if_illegal_moves(game: list[int]) -> bool:
     board = Board()
     for move in game[1:-1]:
@@ -50,6 +51,7 @@ def _check_if_illegal_moves(game: list[int]) -> bool:
             return True
     return False
 
+
 def inappropriate_end_state(game: list[int]) -> bool:
     board = Board()
     for move in game[1:]:
@@ -61,6 +63,7 @@ def inappropriate_end_state(game: list[int]) -> bool:
             return False
     return False
 
+
 def _check_played_after_player_victory(game: list[int]) -> bool:
     board = Board()
     for move in game[1:]:
@@ -71,7 +74,8 @@ def _check_played_after_player_victory(game: list[int]) -> bool:
         except:
             return False
     return False
-    
+
+
 def _check_played_after_draw_game(game: list[int]) -> bool:
     board = Board()
     for move in game[1:]:
@@ -86,9 +90,9 @@ def _check_played_after_draw_game(game: list[int]) -> bool:
 
 def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
     return [
-        _check_played_repeat_moves(game) or 
-        _check_played_after_player_victory(game) or 
-        _check_played_after_draw_game(game)
+        _check_played_repeat_moves(game)
+        or _check_played_after_player_victory(game)
+        or _check_played_after_draw_game(game)
         for game in games
     ]
 
@@ -96,24 +100,25 @@ def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
 def get_error_rate(games: list[list[int]]) -> float:
     return _check_illegal_moves_again(games).count(True) / len(games)
 
+
 def eval_model(games: list[list[int]]) -> dict[str, float]:
-    # repeat_moves = [_check_played_repeat_moves(game) for game in tqdm.tqdm(games)]
-    # play_after_player_victory = [_check_played_after_player_victory(game) for game in games]
-    # play_after_draw_game = [_check_played_after_draw_game(game) for game in games]
-    # inappropriate_end = [inappropriate_end_state(game) for game in games]
-    # illegal_moves_jack = [_check_if_illegal_moves(game) for game in tqdm.tqdm(games)]
+    eval_fs = [
+        _check_played_repeat_moves,
+        _check_played_after_player_victory,
+        _check_played_after_draw_game,
+        inappropriate_end_state,
+        _check_if_illegal_moves,
+    ]
+    evals = {func.__name__: 0.0 for func in eval_fs}
+    game_count = len(games)
+    for game in games:
+        for func in eval_fs:
+            if func(game):
+                evals[func.__name__] += 1
+            else:
+                pass
 
-    # for idx, games in enumerate(illegal_moves_jack):
-    #     if repeat_moves[idx] or play_after_player_victory[idx] or play_after_draw_game[idx] or inappropriate_end[idx]:
-    #         illegal_moves_jack[idx] = False
-
-
-    evals = {
-        'repeat moves': [_check_played_repeat_moves(game) for game in tqdm.tqdm(games)].count(True) / len(games),
-        'play after player victory': [_check_played_after_player_victory(game) for game in games].count(True) / len(games),
-        'play after draw game': [_check_played_after_draw_game(game) for game in games].count(True) / len(games),
-        'inappropriate end state': [inappropriate_end_state(game) for game in games].count(True) / len(games),
-        'total illegal moves, jack': [_check_if_illegal_moves(game) for game in tqdm.tqdm(games)].count(True) / len(games),
-    }
+    for func in eval_fs:
+        evals[func.__name__] /= game_count
 
     return evals
