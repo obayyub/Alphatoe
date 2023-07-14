@@ -16,7 +16,7 @@ def _sample_game(
         for _ in range(10):
             logits: Tensor = model(t.tensor(seq))[0, -1]
             probs = t.softmax(logits / temp, dim=0)
-            token: int = t.multinomial(probs, num_samples=1).item()
+            token = int(t.multinomial(probs, num_samples=1).item())
             seq.append(token)
     return seq
 
@@ -101,7 +101,9 @@ def get_error_rate(games: list[list[int]]) -> float:
     return _check_illegal_moves_again(games).count(True) / len(games)
 
 
-def eval_model(games: list[list[int]]) -> dict[str, float]:
+def eval_model(
+    games: list[list[int]], game_evals: bool = False
+) -> dict[str, float] | tuple[dict[str, float], dict[int, dict[str, bool]]]:
     eval_fs = [
         _check_played_repeat_moves,
         _check_played_after_player_victory,
@@ -109,16 +111,23 @@ def eval_model(games: list[list[int]]) -> dict[str, float]:
         inappropriate_end_state,
         _check_if_illegal_moves,
     ]
-    evals = {func.__name__: 0.0 for func in eval_fs}
+    eval_counts = {func.__name__: 0.0 for func in eval_fs}
+    eval_games = {
+        i: {func.__name__: False for func in eval_fs} for i in range(len(games))
+    }
     game_count = len(games)
-    for game in games:
+    for i, game in tqdm.tqdm(enumerate(games)):
         for func in eval_fs:
             if func(game):
-                evals[func.__name__] += 1
+                eval_games[i][func.__name__] = True
+                eval_counts[func.__name__] += 1
             else:
-                pass
+                eval_games[i][func.__name__] = False
 
     for func in eval_fs:
-        evals[func.__name__] /= game_count
+        eval_counts[func.__name__] /= game_count
 
-    return evals
+    if game_evals:
+        return eval_counts, eval_games
+    else:
+        return eval_counts

@@ -16,7 +16,7 @@ class State(Enum):
 
 
 class Board:
-    def __init__(self):
+    def __init__(self) -> None:
         self.grid = [" "] * 9  # The game board
         self.turn = "X"  # Who's turn is it?
         self.game_state: State = State.ONGOING
@@ -44,7 +44,7 @@ class Board:
             return True
         else:
             return False
-        
+
     def get_state(self) -> State:
         return self.game_state
 
@@ -322,12 +322,13 @@ def autoregressive_guess(seq: list[int]):
     # The unsqueeze is just to make our evals happy
     return torch.stack(logits).unsqueeze(dim=0)
 
+
 def play_game(seq: list[int]):
     board = Board()
     for move in seq[1:-1]:
         try:
             board.make_move(move)
         except:
-            print('Invalid game')
+            print("Invalid game")
             break
     board.draw_board()
