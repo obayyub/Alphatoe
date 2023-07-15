@@ -4,7 +4,12 @@ import torch as t
 from torch.nn import functional as F
 from torch import Tensor
 
-from alphatoe.game import Board, apply_best_moves, generate_all_games
+from alphatoe.game import (
+    Board,
+    apply_best_moves,
+    generate_all_games,
+    get_all_minimax_games,
+)
 
 from typing import Optional
 
@@ -20,8 +25,17 @@ def gen_games(gametype: str = "all"):
         print("Generating strategic games...")
         games = apply_best_moves(board)
 
+    elif gametype == "minimax first":
+        print("Generating minimax vs all...")
+        games = get_all_minimax_games(board, True, None)
+
+    elif gametype == "minimax second":
+        print("Generating minimax vs all...")
+        games = get_all_minimax_games(board, False, None)
     else:
-        raise ValueError(f"gametype must be one of 'all' or 'strat', not {gametype}")
+        raise ValueError(
+            f"gametype must be one of 'all', 'strat', or 'all minimax'. Not {gametype}"
+        )
 
     print(f"Generated {len(games)} games")
 
