@@ -224,6 +224,32 @@ def make_random_best_move(board: Board) -> None:
     board.make_move(bestMove)
 
 
+def get_all_minimax_games(
+    boards: list[Board],
+    minimax_turn: bool,
+    finished_boards: Optional[list[Board]] = None,
+) -> list[Board]:
+    if finished_boards == None:
+        finished_boards = []
+    ongoing_boards = []
+    if minimax_turn:
+        move_getter = get_best_moves
+    else:
+        move_getter = get_possible_moves
+    for board in boards:
+        if board.game_state != State.ONGOING:
+            finished_boards.append(board)
+        else:
+            for move in move_getter(board):
+                _board = deepcopy(board)
+                _board.make_move(move)
+                ongoing_boards.append(_board)
+    if ongoing_boards == []:
+        return finished_boards
+    else:
+        return get_all_minimax_games(ongoing_boards, not minimax_turn, finished_boards)
+
+
 def determine_entropy(counts: list[int]) -> float:
     total_counts = sum(counts)
     entropy = 0.0
