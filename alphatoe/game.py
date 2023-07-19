@@ -371,3 +371,14 @@ def next_minimax_moves(seq: list[int]) -> list[int]:
     if board.game_state != State.ONGOING:
         return [9]
     return get_best_moves(board)
+
+def next_possible_moves(seq: list[int]) -> list[int]:
+    board = Board()
+    for move in seq[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return [9]
+    if board.game_state != State.ONGOING:
+        return [9]
+    return get_possible_moves(board)

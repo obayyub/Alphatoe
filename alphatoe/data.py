@@ -11,6 +11,7 @@ from alphatoe.game import (
     apply_best_moves,
     generate_all_games,
     get_all_minimax_games,
+    next_possible_moves,
 )
 
 from typing import Optional
@@ -59,6 +60,32 @@ def gen_data_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
     labels = moves[:, 1:]
     print(labels.shape)
     print("Generated data and labels")
+    return data, labels
+
+def gen_data_prob_encoded_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
+    data = moves[:, :-1]
+    labels = []
+    master_cool_guys: dict[str, list[int]] = {}
+    for game in tqdm(data):
+        label = []
+        for idx in range(1, len(game) + 1):
+            # convert tensor to list
+            seq: list[int] = game[:idx].tolist()
+            seq_str: str = str(seq)
+            if seq_str not in master_cool_guys:
+                master_cool_guys[seq_str] = next_possible_moves(seq)
+            next_moves = master_cool_guys[seq_str]
+            encoded_label = [0] * 10
+            for i in range(len(encoded_label)):
+                if i in next_moves:
+                    encoded_label[i] = 1
+            encoded_label = t.tensor(encoded_label) / sum(encoded_label)
+            label.append(encoded_label)
+        labels.append(t.stack(label))
+    labels = t.stack(labels)
+
+    print(labels.shape)
+    print("Generated all data and probabilistic labels")
     return data, labels
 
 
@@ -131,6 +158,9 @@ def gen_data(
     if gametype == "minimax all":
         _, moves = gen_games("all")
         data, encoded_labels = gen_data_minimax_encoded_labels(moves)
+    if gametype == "prob all":
+        _, moves = gen_games("all")
+        data, encoded_labels = gen_data_prob_encoded_labels(moves)
     else:
         _, moves = gen_games(gametype)
         data, labels = gen_data_labels(moves)
