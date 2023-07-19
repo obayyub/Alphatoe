@@ -189,7 +189,7 @@ def get_most_recent_file(directory: str):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("experiment_name", type=str)
-    ap.add_argument("gametype", type=str, choices=["strat", "all", "minimax all"])
+    ap.add_argument("gametype", type=str, choices=["strat", "all", "minimax all", "prob all"])
 
     ap.add_argument("--fine_tune", type=str)
     ap.add_argument("--n_epochs", type=int, default=40)
