@@ -82,7 +82,7 @@ def main(args: argparse.Namespace):
         print("Sampling games...")
         games = evals.sample_games(model, 1, num_games)
         print("Evaluating games...")
-        error_rates, _ = evals.eval_model(games)
+        error_rates = evals.eval_model(games)
         for eval in error_rates:
             print(f"{eval} : {error_rates[eval]}")
 
@@ -189,7 +189,7 @@ def get_most_recent_file(directory: str):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("experiment_name", type=str)
-    ap.add_argument("gametype", type=str, choices=["strat", "all"])
+    ap.add_argument("gametype", type=str, choices=["strat", "all", "minimax all"])
 
     ap.add_argument("--fine_tune", type=str)
     ap.add_argument("--n_epochs", type=int, default=40)

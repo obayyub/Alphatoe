@@ -2,7 +2,9 @@ from torch import Tensor
 from transformer_lens import HookedTransformer
 import torch as t
 import tqdm
-from alphatoe.game import Board, State
+from alphatoe.game import Board, State, get_best_moves
+from collections import Counter
+import random
 
 
 def _sample_game(
@@ -39,6 +41,7 @@ def _check_played_repeat_moves(game: list[int]) -> bool:
 
 def _check_if_illegal_moves(game: list[int]) -> bool:
     board = Board()
+    print(game)
     for move in game[1:-1]:
         if board.game_state == State.ONGOING:
             try:
@@ -95,6 +98,37 @@ def _check_illegal_moves_again(games: list[list[int]]) -> list[bool]:
         or _check_played_after_draw_game(game)
         for game in games
     ]
+
+
+# returns winner
+def model_vs_minimax(model: HookedTransformer, minimax_turn: bool) -> str:
+    board = Board()
+
+    while board.game_state == State.ONGOING:
+        if minimax_turn:
+            move = random.choice(get_best_moves(board))
+            board.make_move(move)
+            minimax_turn = not minimax_turn
+        else:
+            move = t.argmax(model(t.tensor([10] + board.moves_played))[0, -1]).item()
+            board.make_move(move)
+            minimax_turn = not minimax_turn
+    if board.game_state == State.DRAW:
+        return "draw"
+    elif minimax_turn:
+        return "model"
+    else:
+        return "minimax"
+
+
+def _check_minimax_win_rate(model: HookedTransformer, samples: int) -> Counter[str]:
+    games = [
+        model_vs_minimax(model, i < (samples // 2)) for i in tqdm.tqdm(range(samples))
+    ]
+    c = Counter(games)
+    sm = sum(c.values())
+    new_c = {k: c[k] / sm for k in c}
+    return new_c
 
 
 def get_error_rate(games: list[list[int]]) -> float:
