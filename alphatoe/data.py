@@ -68,8 +68,8 @@ def gen_data_minimax_encoded_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
     master_cool_guys: dict[str, list[int]] = {}
     for game in tqdm(data):
         label = []
-        for idx in range(1, len(game)+1):
-            #convert tensor to list
+        for idx in range(1, len(game) + 1):
+            # convert tensor to list
             seq: list[int] = game[:idx].tolist()
             seq_str: str = str(seq)
             if seq_str not in master_cool_guys:
@@ -79,7 +79,7 @@ def gen_data_minimax_encoded_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
             for i in range(len(encoded_label)):
                 if i in next_moves:
                     encoded_label[i] = 1
-            encoded_label = t.tensor(encoded_label)/sum(encoded_label)
+            encoded_label = t.tensor(encoded_label) / sum(encoded_label)
             label.append(encoded_label)
         labels.append(t.stack(label))
     labels = t.stack(labels)
@@ -129,7 +129,7 @@ def gen_data(
     seed: Optional[int] = None,
 ):
     if gametype == "minimax all":
-        _, moves = gen_games('all')
+        _, moves = gen_games("all")
         data, encoded_labels = gen_data_minimax_encoded_labels(moves)
     else:
         _, moves = gen_games(gametype)

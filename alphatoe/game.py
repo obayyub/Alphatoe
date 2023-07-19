@@ -358,6 +358,8 @@ def play_game(seq: list[int]):
             print("Invalid game")
             break
     board.draw_board()
+    return board
+
 
 def next_minimax_moves(seq: list[int]) -> list[int]:
     board = Board()
