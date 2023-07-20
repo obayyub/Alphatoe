@@ -1,3 +1,4 @@
+import math
 from torch import Tensor
 from transformer_lens import HookedTransformer
 import torch as t
@@ -28,6 +29,23 @@ def sample_games(
     for _ in tqdm.tqdm(range(num_games)):
         games.append(_sample_game(model, temp))
     return games
+
+
+def infer_games(
+    model: HookedTransformer, game_list: t.Tensor, batch_size: int = 1,
+) -> t.Tensor:
+    """Running model inference over a list of games."""
+    num_games = game_list.shape[0]
+    batch_predictions = list()
+    for batch_i in tqdm.tqdm(range(math.ceil(num_games / batch_size))):
+        start = batch_size * batch_i
+        end = min(num_games, start + batch_size)
+
+        input_batch = game_list[start:end, :10]
+        logits_batch = model(input_batch)
+        batch_predictions.append(t.argmax(logits_batch, axis=-1))
+
+    return t.cat(batch_predictions, axis=0)
 
 
 # evals return True on model error
