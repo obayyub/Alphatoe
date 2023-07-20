@@ -16,7 +16,7 @@ class State(Enum):
 
 
 class Board:
-    def __init__(self):
+    def __init__(self) -> None:
         self.grid = [" "] * 9  # The game board
         self.turn = "X"  # Who's turn is it?
         self.game_state: State = State.ONGOING
@@ -44,7 +44,7 @@ class Board:
             return True
         else:
             return False
-        
+
     def get_state(self) -> State:
         return self.game_state
 
@@ -224,6 +224,32 @@ def make_random_best_move(board: Board) -> None:
     board.make_move(bestMove)
 
 
+def get_all_minimax_games(
+    boards: list[Board],
+    minimax_turn: bool,
+    finished_boards: Optional[list[Board]] = None,
+) -> list[Board]:
+    if finished_boards == None:
+        finished_boards = []
+    ongoing_boards = []
+    if minimax_turn:
+        move_getter = get_best_moves
+    else:
+        move_getter = get_possible_moves
+    for board in boards:
+        if board.game_state != State.ONGOING:
+            finished_boards.append(board)
+        else:
+            for move in move_getter(board):
+                _board = deepcopy(board)
+                _board.make_move(move)
+                ongoing_boards.append(_board)
+    if ongoing_boards == []:
+        return finished_boards
+    else:
+        return get_all_minimax_games(ongoing_boards, not minimax_turn, finished_boards)
+
+
 def determine_entropy(counts: list[int]) -> float:
     total_counts = sum(counts)
     entropy = 0.0
@@ -322,12 +348,37 @@ def autoregressive_guess(seq: list[int]):
     # The unsqueeze is just to make our evals happy
     return torch.stack(logits).unsqueeze(dim=0)
 
+
 def play_game(seq: list[int]):
     board = Board()
     for move in seq[1:-1]:
         try:
             board.make_move(move)
         except:
-            print('Invalid game')
+            print("Invalid game")
             break
     board.draw_board()
+    return board
+
+
+def next_minimax_moves(seq: list[int]) -> list[int]:
+    board = Board()
+    for move in seq[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return [9]
+    if board.game_state != State.ONGOING:
+        return [9]
+    return get_best_moves(board)
+
+def next_possible_moves(seq: list[int]) -> list[int]:
+    board = Board()
+    for move in seq[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return [9]
+    if board.game_state != State.ONGOING:
+        return [9]
+    return get_possible_moves(board)

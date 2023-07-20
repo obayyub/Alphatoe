@@ -13,6 +13,8 @@ from alphatoe import data, train, evals
 
 
 def main(args: argparse.Namespace):
+    print(args)
+    print(type(args))
     dir = os.path.dirname(os.path.realpath(__file__))
     model_dir = os.path.join(dir, "models/")
     check_args(args)
@@ -23,16 +25,18 @@ def main(args: argparse.Namespace):
         model = HookedTransformer(cfg)
     elif args.fine_tune == "recent":
         model_name = get_most_recent_file(f"{model_dir}/")
-        args = load_config(model_name, model_dir)
+        new_args = load_config(model_name, model_dir)
+        args = splice_args(args, new_args)
+        print(args)
         cfg = create_hooked_transformer_config(args)
         model = HookedTransformer(cfg)
-        model = model.load_state_dict(load_weights(model_name, model_dir))
+        model.load_state_dict(load_weights(model_name, model_dir))
     else:
         model_name = args.model_name
         args = load_config(model_name, model_dir)
         cfg = create_hooked_transformer_config(args)
         model = HookedTransformer(cfg)
-        model = model.load_state_dict(load_weights(model_name, model_dir))
+        model.load_state_dict(load_weights(model_name, model_dir))
 
     model.to(cfg.device)
 
@@ -75,9 +79,12 @@ def main(args: argparse.Namespace):
 
     if args.eval_model:
         num_games = 2000
+        print("Sampling games...")
         games = evals.sample_games(model, 1, num_games)
-        error_rate = evals.error_rate(games)
-        print(f"Illegal move percentage for {num_games} is {error_rate} ")
+        print("Evaluating games...")
+        error_rates = evals.eval_model(games)
+        for eval in error_rates:
+            print(f"{eval} : {error_rates[eval]}")
 
 
 def create_hooked_transformer_config(
@@ -100,6 +107,25 @@ def create_hooked_transformer_config(
     )
 
 
+def splice_args(args: argparse.Namespace, new_args):
+    print("new args", new_args)
+    print("old args", args)
+    args.n_layers = new_args["n_layers"]
+    args.n_heads = new_args["n_heads"]
+    args.d_model = new_args["d_model"]
+    args.d_head = new_args["d_head"]
+    args.d_mlp = new_args["d_mlp"]
+    args.act_fn = new_args["act_fn"]
+    args.normalization_type = new_args["normalization_type"]
+    args.d_vocab = 11
+    args.d_vocab_out = 10
+    args.n_ctx = 10
+    args.init_weights = True
+    args.device = new_args["device"]
+    args.seed = new_args["seed"]
+    return args
+
+
 def check_args(args: argparse.Namespace):
     assert args.d_model % args.d_head == 0
 
@@ -115,20 +141,24 @@ def save_config(args: argparse.Namespace, timestamp: str, model_dir: str) -> Non
         json.dump(vars(args), f, indent=4)
 
 
-def load_config(model_name: str, model_dir:str):
+def load_config(model_name: str, model_dir: str):
     with open(f"{model_dir}{model_name}.json", "r") as f:
         return json.load(f)
 
 
-def save_weights(m: HookedTransformer, experiment_name: str, timestamp: str, model_dir: str):
+def save_weights(
+    m: HookedTransformer, experiment_name: str, timestamp: str, model_dir: str
+):
     torch.save(m.state_dict(), f"{model_dir}{experiment_name}-{timestamp}.pt")
 
 
 def load_weights(model_name: str, model_dir: str):
-    return torch.load(f"{model_dir}{model_name}")
+    return torch.load(f"{model_dir}{model_name}.pt")
 
 
-def save_training_data(df: pd.DataFrame, experiment_name: str, timestamp: str, model_dir: str):
+def save_training_data(
+    df: pd.DataFrame, experiment_name: str, timestamp: str, model_dir: str
+):
     df.to_csv(f"{model_dir}{experiment_name} training data-{timestamp}.csv")
 
 
@@ -159,7 +189,7 @@ def get_most_recent_file(directory: str):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("experiment_name", type=str)
-    ap.add_argument("gametype", type=str, choices=["strat", "all"])
+    ap.add_argument("gametype", type=str, choices=["strat", "all", "minimax all", "prob all"])
 
     ap.add_argument("--fine_tune", type=str)
     ap.add_argument("--n_epochs", type=int, default=40)
