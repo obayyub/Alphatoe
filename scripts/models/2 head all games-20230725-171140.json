@@ -1,0 +1,22 @@
+{
+    "experiment_name": "2 head all games",
+    "gametype": "prob all",
+    "fine_tune": null,
+    "n_epochs": 1000,
+    "lr": 1e-05,
+    "weight_decay": 0.0001,
+    "batch_size": 4096,
+    "train_test_split": 0.8,
+    "n_layers": 1,
+    "n_heads": 2,
+    "d_model": 128,
+    "d_head": 16,
+    "d_mlp": 512,
+    "act_fn": "relu",
+    "normalization_type": null,
+    "device": "cuda",
+    "seed": 1337,
+    "save_losses": false,
+    "save_checkpoints": false,
+    "eval_model": true
+}
