@@ -24,6 +24,7 @@ class Board:
         self.is_maximizer = True  # Useful for the minimax algorithm
         self.children: list[Board] = []
         self.winner = ""
+        self.win_condition = None
 
     # Internal
     def swap_turn(self) -> None:
@@ -67,17 +68,17 @@ class Board:
 
     # Internal
     def set_game_state(self) -> State:
-        win_conditions = [
-            (0, 1, 2),
-            (3, 4, 5),
-            (6, 7, 8),
-            (0, 3, 6),
-            (1, 4, 7),
-            (2, 5, 8),
-            (0, 4, 8),
-            (2, 4, 6),
-        ]
-        for condition in win_conditions:
+        win_conditions = {
+            (0, 1, 2): "top row",
+            (3, 4, 5): "middle row",
+            (6, 7, 8): "bottom row",
+            (0, 3, 6): "left column",
+            (1, 4, 7): "middle column",
+            (2, 5, 8): "right column",
+            (0, 4, 8): "top left -> bottom right",
+            (2, 4, 6): "bottom left -> top right",
+        }
+        for condition in win_conditions.keys():
             if (
                 self.grid[condition[0]]
                 == self.grid[condition[1]]
@@ -85,6 +86,7 @@ class Board:
                 != " "
             ):
                 self.winner = self.grid[condition[0]]
+                self.win_condition = win_conditions[condition]
                 return State.OVER
         if " " not in self.grid:
             return State.DRAW
@@ -93,10 +95,12 @@ class Board:
 
     # External
     def get_winner(self) -> str:
-        if self.winner != "":
+        if self.game_state == State.ONGOING:
+            raise Exception("Game is not over yet!")
+        elif self.winner != "":
             return self.winner
         else:
-            raise ValueError("Game's not over yet or it's a draw!")
+            return "draw"
 
     # External
     def undo(self) -> None:
@@ -371,6 +375,7 @@ def next_minimax_moves(seq: list[int]) -> list[int]:
     if board.game_state != State.ONGOING:
         return [9]
     return get_best_moves(board)
+
 
 def next_possible_moves(seq: list[int]) -> list[int]:
     board = Board()

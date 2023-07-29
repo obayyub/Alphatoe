@@ -62,6 +62,7 @@ def gen_data_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
     print("Generated data and labels")
     return data, labels
 
+
 def gen_data_prob_encoded_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
     data = moves[:, :-1]
     labels = []
@@ -146,6 +147,8 @@ def train_test_split(
         labels = labels.to(device)
         print(labels.shape)
 
+    # for when we want to know the order of the training data
+    # return inds
     return (data[train_inds], labels[train_inds], data[test_inds], labels[test_inds])
 
 
