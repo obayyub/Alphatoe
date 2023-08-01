@@ -129,6 +129,7 @@ def train_test_split(
     split_ratio: float = 0.8,
     device: Optional[str] = None,
     seed: Optional[int] = None,
+    returns_inds: bool = False,
 ):
     if seed is not None:
         t.random.manual_seed(seed)
@@ -148,7 +149,8 @@ def train_test_split(
         print(labels.shape)
 
     # for when we want to know the order of the training data
-    # return inds
+    if returns_inds:
+        return inds
     return (data[train_inds], labels[train_inds], data[test_inds], labels[test_inds])
 
 
@@ -157,6 +159,7 @@ def gen_data(
     split_ratio: float = 0.8,
     device: Optional[str] = None,
     seed: Optional[int] = None,
+    returns_inds: bool = False,
 ):
     if gametype == "minimax all":
         _, moves = gen_games("all")
@@ -169,5 +172,5 @@ def gen_data(
         data, labels = gen_data_labels(moves)
         encoded_labels = gen_data_labels_one_hot(labels)
     return train_test_split(
-        data, encoded_labels, split_ratio=split_ratio, device=device, seed=seed
+        data, encoded_labels, split_ratio=split_ratio, device=device, seed=seed, returns_inds=returns_inds
     )
