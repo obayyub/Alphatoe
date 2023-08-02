@@ -24,7 +24,7 @@ class Board:
         self.is_maximizer = True  # Useful for the minimax algorithm
         self.children: list[Board] = []
         self.winner = ""
-        self.win_condition = None
+        self.win_conditions: list[str] = [] 
 
     # Internal
     def swap_turn(self) -> None:
@@ -86,8 +86,9 @@ class Board:
                 != " "
             ):
                 self.winner = self.grid[condition[0]]
-                self.win_condition = win_conditions[condition]
-                return State.OVER
+                self.win_conditions.append(win_conditions[condition])
+        if self.winner != "":
+            return State.OVER
         if " " not in self.grid:
             return State.DRAW
         else:
