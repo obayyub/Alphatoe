@@ -105,3 +105,40 @@ def plot_predictions(seq, logits, **kwargs):
     plt.colorbar()
 
     plt.show()
+
+
+def get_neuron_acts(model, seq):
+    with torch.no_grad():
+        logits, cache = model.run_with_cache(torch.tensor(seq))
+    neuron_activations = copy(cache["post", 0][0])
+    return neuron_activations
+
+
+def ablate_one_neuron(neuron, seq):
+    def hook(module, input, output):
+        result = output.clone()
+        result[:, :, neuron] = 0
+        return result
+
+    try:
+        handle = model.blocks[0].mlp.hook_post.register_forward_hook(hook)
+        logits = model(torch.tensor(seq))
+        handle.remove()
+    except Exception as e:
+        handle.remove()
+        raise e
+
+    return logits
+
+
+def neuron_ablated_loss(data, neuron):
+    data_size = data.shape[0]
+    target = einops.repeat(
+        torch.tensor([0.0] * 9 + [1.0]),
+        "logit_dim -> data_size logit_dim",
+        data_size=data_size,
+    ).to("cuda")
+    logits = ablate_one_neuron(neuron, data)[:, -1, :]
+    loss = F.cross_entropy(logits, target, reduction="none")
+    loss.to("cpu").detach().numpy()
+    return loss
