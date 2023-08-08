@@ -1,0 +1,107 @@
+import numpy as np
+import torch
+from transformer_lens import HookedTransformer, HookedTransformerConfig
+import json
+import matplotlib.pyplot as plt
+
+
+def numpy(t):
+    return t.cpu().numpy()
+
+
+def load_model(model_file_name: str):
+    weights = torch.load(model_file_name + ".pt")
+    with open(model_file_name + ".json", "r") as f:
+        args = json.load(f)
+    model_cfg = HookedTransformerConfig(
+        n_layers=args["n_layers"],
+        n_heads=args["n_heads"],
+        d_model=args["d_model"],
+        d_head=args["d_head"],
+        d_mlp=args["d_mlp"],
+        act_fn=args["act_fn"],
+        normalization_type=args["normalization_type"],
+        d_vocab=11,
+        d_vocab_out=10,
+        n_ctx=10,
+        init_weights=True,
+        device=args["device"],
+        seed=args["seed"],
+    )
+    model = HookedTransformer(model_cfg)
+    model.load_state_dict(weights)
+
+
+def ablate_all_but_one_head(head, seq):
+    def hook(module, input, output):
+        result = torch.zeros_like(output)
+        result[:, :, head, :] = output[:, :, head, :]
+        return result
+
+    model.cfg.use_attn_result = True
+    try:
+        handle = model.blocks[0].attn.hook_result.register_forward_hook(hook)
+        logits = model(torch.tensor(seq))
+        handle.remove()
+    except Exception as e:
+        handle.remove()
+        raise e
+
+    return logits
+
+
+def ablate_one_head(head, seq):
+    def hook(module, input, output):
+        result = output.clone()
+        result[:, :, head, :] = 0
+        return result
+
+    model.cfg.use_attn_result = True
+    try:
+        handle = model.blocks[0].attn.hook_result.register_forward_hook(hook)
+        logits = model(torch.tensor(seq))
+        handle.remove()
+    except Exception as e:
+        handle.remove()
+        raise e
+
+    return logits
+
+
+def ablate_mlp(seq):
+    def hook(module, input, output):
+        return torch.zeros_like(output)
+
+    try:
+        handle = model.blocks[0].mlp.register_forward_hook(hook)
+        logits = model(torch.tensor(seq))
+        handle.remove()
+    except Exception as e:
+        handle.remove()
+        raise e
+
+    return logits
+
+
+def plot_predictions(seq, logits, **kwargs):
+    plt.figure(figsize=(14, 5))
+
+    preds = torch.softmax(logits, axis=-1)
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(numpy(logits)[0], cmap="jet", **kwargs)
+    plt.yticks(np.arange(10), labels=seq)
+    plt.ylabel("Current token", fontsize=15)
+    plt.xlabel("Predicted token", fontsize=15)
+    plt.title("Logits", fontsize=20)
+    plt.colorbar()
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(numpy(preds)[0], cmap="jet", vmin=0, vmax=1)
+    plt.yticks(np.arange(10), labels=seq)
+    plt.ylabel("Current token", fontsize=15)
+    plt.xlabel("Predicted token", fontsize=15)
+    plt.title("Preds", fontsize=20)
+    plt.colorbar()
+
+    plt.show()
