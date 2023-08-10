@@ -24,7 +24,7 @@ class Board:
         self.is_maximizer = True  # Useful for the minimax algorithm
         self.children: list[Board] = []
         self.winner = ""
-        self.win_conditions: list[str] = [] 
+        self.win_conditions: list[str] = []
 
     # Internal
     def swap_turn(self) -> None:
@@ -356,7 +356,13 @@ def autoregressive_guess(seq: list[int]):
 
 def play_game(seq: list[int]):
     board = Board()
-    for move in seq[1:-1]:
+    lb = 0
+    ub = len(seq)
+    if seq[0] == 10:
+        lb = 1
+    if 9 in seq:
+        ub = seq.index(9)
+    for move in seq[lb:ub]:
         try:
             board.make_move(move)
         except:
