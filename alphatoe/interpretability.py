@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 def numpy(t):
-    return t.cpu().numpy()
+    return t.cpu().detach().numpy()
 
 
 def load_model(model_file_name: str):
@@ -30,9 +30,10 @@ def load_model(model_file_name: str):
     )
     model = HookedTransformer(model_cfg)
     model.load_state_dict(weights)
+    return model
 
 
-def ablate_all_but_one_head(head, seq):
+def ablate_all_but_one_head(model, head, seq):
     def hook(module, input, output):
         result = torch.zeros_like(output)
         result[:, :, head, :] = output[:, :, head, :]
@@ -50,7 +51,7 @@ def ablate_all_but_one_head(head, seq):
     return logits
 
 
-def ablate_one_head(head, seq):
+def ablate_one_head(model, head, seq):
     def hook(module, input, output):
         result = output.clone()
         result[:, :, head, :] = 0
@@ -68,7 +69,7 @@ def ablate_one_head(head, seq):
     return logits
 
 
-def ablate_mlp(seq):
+def ablate_mlp(model, seq):
     def hook(module, input, output):
         return torch.zeros_like(output)
 
@@ -83,27 +84,54 @@ def ablate_mlp(seq):
     return logits
 
 
-def plot_predictions(seq, logits, **kwargs):
+def plot_predictions(seq, logits, suptitle="", show_vals=False, **kwargs):
     plt.figure(figsize=(14, 5))
-
+    show_vals = show_vals
     preds = torch.softmax(logits, axis=-1)
-
     plt.subplot(1, 2, 1)
     plt.imshow(numpy(logits)[0], cmap="jet", **kwargs)
-    plt.yticks(np.arange(10), labels=seq)
+    plt.yticks(np.arange(logits.shape[1]), labels=seq)
     plt.ylabel("Current token", fontsize=15)
     plt.xlabel("Predicted token", fontsize=15)
     plt.title("Logits", fontsize=20)
     plt.colorbar()
+    if show_vals:
+        plt.rcParams["figure.dpi"] = 100
+        for i in range(logits.shape[1]):
+            for j in range(logits.shape[2]):
+                value = logits[0, i, j].item()
+                plt.text(
+                    j,
+                    i,
+                    f"{value:.2f}",
+                    ha="center",
+                    va="center",
+                    color="w",
+                    fontsize=8,
+                )
 
     plt.subplot(1, 2, 2)
     plt.imshow(numpy(preds)[0], cmap="jet", vmin=0, vmax=1)
-    plt.yticks(np.arange(10), labels=seq)
+    plt.yticks(np.arange(logits.shape[1]), labels=seq)
     plt.ylabel("Current token", fontsize=15)
     plt.xlabel("Predicted token", fontsize=15)
     plt.title("Preds", fontsize=20)
     plt.colorbar()
-
+    plt.suptitle(suptitle, fontsize=20)
+    if show_vals:
+        plt.rcParams["figure.dpi"] = 100
+        for i in range(preds.shape[1]):
+            for j in range(preds.shape[2]):
+                value = preds[0, i, j].item()
+                plt.text(
+                    j,
+                    i,
+                    f"{value:.2f}",
+                    ha="center",
+                    va="center",
+                    color="w",
+                    fontsize=8,
+                )
     plt.show()
 
 
