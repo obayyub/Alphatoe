@@ -9,6 +9,7 @@ alphatoe/__init__.py
 alphatoe/data.py
 alphatoe/evals.py
 alphatoe/game.py
+alphatoe/interpretability.py
 alphatoe/plot.py
 alphatoe/train.py
 alphatoe/trie.py

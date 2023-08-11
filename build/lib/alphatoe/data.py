@@ -3,8 +3,16 @@ import math
 import torch as t
 from torch.nn import functional as F
 from torch import Tensor
+from tqdm import tqdm
 
-from alphatoe.game import Board, apply_best_moves, generate_all_games
+from alphatoe.game import (
+    Board,
+    next_minimax_moves,
+    apply_best_moves,
+    generate_all_games,
+    get_all_minimax_games,
+    next_possible_moves,
+)
 
 from typing import Optional
 
@@ -20,8 +28,17 @@ def gen_games(gametype: str = "all"):
         print("Generating strategic games...")
         games = apply_best_moves(board)
 
+    elif gametype == "minimax first":
+        print("Generating minimax vs all...")
+        games = get_all_minimax_games(board, True, None)
+
+    elif gametype == "minimax second":
+        print("Generating minimax vs all...")
+        games = get_all_minimax_games(board, False, None)
     else:
-        raise ValueError(f"gametype must be one of 'all' or 'strat', not {gametype}")
+        raise ValueError(
+            f"gametype must be one of 'all', 'strat', or 'all minimax'. Not {gametype}"
+        )
 
     print(f"Generated {len(games)} games")
 
@@ -46,6 +63,60 @@ def gen_data_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
     return data, labels
 
 
+def gen_data_prob_encoded_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
+    data = moves[:, :-1]
+    labels = []
+    master_cool_guys: dict[str, list[int]] = {}
+    for game in tqdm(data):
+        label = []
+        for idx in range(1, len(game) + 1):
+            # convert tensor to list
+            seq: list[int] = game[:idx].tolist()
+            seq_str: str = str(seq)
+            if seq_str not in master_cool_guys:
+                master_cool_guys[seq_str] = next_possible_moves(seq)
+            next_moves = master_cool_guys[seq_str]
+            encoded_label = [0] * 10
+            for i in range(len(encoded_label)):
+                if i in next_moves:
+                    encoded_label[i] = 1
+            encoded_label = t.tensor(encoded_label) / sum(encoded_label)
+            label.append(encoded_label)
+        labels.append(t.stack(label))
+    labels = t.stack(labels)
+
+    print(labels.shape)
+    print("Generated all data and probabilistic labels")
+    return data, labels
+
+
+def gen_data_minimax_encoded_labels(moves: Tensor) -> tuple[Tensor, Tensor]:
+    data = moves[:, :-1]
+    labels = []
+    master_cool_guys: dict[str, list[int]] = {}
+    for game in tqdm(data):
+        label = []
+        for idx in range(1, len(game) + 1):
+            # convert tensor to list
+            seq: list[int] = game[:idx].tolist()
+            seq_str: str = str(seq)
+            if seq_str not in master_cool_guys:
+                master_cool_guys[seq_str] = next_minimax_moves(seq)
+            next_moves = master_cool_guys[seq_str]
+            encoded_label = [0] * 10
+            for i in range(len(encoded_label)):
+                if i in next_moves:
+                    encoded_label[i] = 1
+            encoded_label = t.tensor(encoded_label) / sum(encoded_label)
+            label.append(encoded_label)
+        labels.append(t.stack(label))
+    labels = t.stack(labels)
+
+    print(labels.shape)
+    print("Generated all data and minimax labels")
+    return data, labels
+
+
 def gen_data_labels_one_hot(labels: Tensor) -> Tensor:
     encoded_labels: Tensor = F.one_hot(labels).to(t.float)
     print("One hot encoded labels")
@@ -58,6 +129,7 @@ def train_test_split(
     split_ratio: float = 0.8,
     device: Optional[str] = None,
     seed: Optional[int] = None,
+    returns_inds: bool = False,
 ):
     if seed is not None:
         t.random.manual_seed(seed)
@@ -72,8 +144,13 @@ def train_test_split(
 
     if device is not None:
         data = data.to(device)
+        print(labels.shape)
         labels = labels.to(device)
+        print(labels.shape)
 
+    # for when we want to know the order of the training data
+    if returns_inds:
+        return inds
     return (data[train_inds], labels[train_inds], data[test_inds], labels[test_inds])
 
 
@@ -82,10 +159,18 @@ def gen_data(
     split_ratio: float = 0.8,
     device: Optional[str] = None,
     seed: Optional[int] = None,
+    returns_inds: bool = False,
 ):
-    _, moves = gen_games(gametype)
-    data, labels = gen_data_labels(moves)
-    encoded_labels = gen_data_labels_one_hot(labels)
+    if gametype == "minimax all":
+        _, moves = gen_games("all")
+        data, encoded_labels = gen_data_minimax_encoded_labels(moves)
+    if gametype == "prob all":
+        _, moves = gen_games("all")
+        data, encoded_labels = gen_data_prob_encoded_labels(moves)
+    else:
+        _, moves = gen_games(gametype)
+        data, labels = gen_data_labels(moves)
+        encoded_labels = gen_data_labels_one_hot(labels)
     return train_test_split(
-        data, encoded_labels, split_ratio=split_ratio, device=device, seed=seed
+        data, encoded_labels, split_ratio=split_ratio, device=device, seed=seed, returns_inds=returns_inds
     )
