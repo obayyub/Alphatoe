@@ -21,12 +21,13 @@ def imshow(
     xaxis: Optional[str] = None,
     yaxis: Optional[str] = None,
     animation_name: str = "Snapshot",
+    aspect="auto",
     **kwargs: Any
 ):
     tensor = torch.squeeze(tensor)
     px.imshow(
         to_numpy(tensor, flat=False),
-        aspect="auto",
+        aspect=aspect,
         labels={"x": xaxis, "y": yaxis, "animation_name": animation_name},
         **kwargs
     ).show()
@@ -77,7 +78,7 @@ def lines(
 
 
 # Set default colour scheme
-imshow = partial(imshow, color_continuous_scale="Blues")
+imshow = partial(imshow, color_continuous_scale="RdBu")
 # Creates good defaults for showing divergent colour scales (ie with both
 # positive and negative values, where 0 is white)
 imshow_div = partial(
