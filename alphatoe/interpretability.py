@@ -87,6 +87,7 @@ def ablate_mlp(model, seq):
 
 def plot_predictions(seq, logits, suptitle="", show_vals=False, **kwargs):
     plt.figure(figsize=(14, 5))
+    plt.gcf().set_facecolor("white")
     show_vals = show_vals
     preds = torch.softmax(logits, axis=-1)
     plt.subplot(1, 2, 1)
@@ -133,6 +134,7 @@ def plot_predictions(seq, logits, suptitle="", show_vals=False, **kwargs):
                     color="w",
                     fontsize=8,
                 )
+    plt.gcf().set_facecolor("white")
     plt.show()
 
 
