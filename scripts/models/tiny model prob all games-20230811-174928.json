@@ -1,0 +1,27 @@
+{
+    "experiment_name": "tiny model prob all games",
+    "gametype": "prob all",
+    "fine_tune": null,
+    "n_epochs": 1000,
+    "lr": 1e-05,
+    "weight_decay": 0.0001,
+    "batch_size": 4096,
+    "train_test_split": 0.8,
+    "n_layers": 1,
+    "n_heads": 2,
+    "d_model": 16,
+    "d_head": 8,
+    "d_mlp": 64,
+    "act_fn": "relu",
+    "normalization_type": null,
+    "device": "cuda",
+    "seed": 1337,
+    "save_losses": false,
+    "save_checkpoints": false,
+    "eval_model": true
+}
+/* _check_played_repeat_moves : 0.0245
+_check_played_after_player_victory : 0.49
+_check_played_after_draw_game : 0.0
+inappropriate_end_state : 0.202
+_check_if_illegal_moves : 0.708 */

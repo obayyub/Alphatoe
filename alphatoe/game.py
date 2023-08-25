@@ -67,17 +67,17 @@ class Board:
 
     # Internal
     def set_game_state(self) -> State:
-        win_conditions = [
-            (0, 1, 2),
-            (3, 4, 5),
-            (6, 7, 8),
-            (0, 3, 6),
-            (1, 4, 7),
-            (2, 5, 8),
-            (0, 4, 8),
-            (2, 4, 6),
-        ]
-        for condition in win_conditions:
+        win_conditions = {
+            (0, 1, 2): "top row",
+            (3, 4, 5): "middle row",
+            (6, 7, 8): "bottom row",
+            (0, 3, 6): "left column",
+            (1, 4, 7): "middle column",
+            (2, 5, 8): "right column",
+            (0, 4, 8): "top left -> bottom right",
+            (2, 4, 6): "bottom left -> top right",
+        }
+        for condition in win_conditions.keys():
             if (
                 self.grid[condition[0]]
                 == self.grid[condition[1]]
@@ -85,7 +85,9 @@ class Board:
                 != " "
             ):
                 self.winner = self.grid[condition[0]]
-                return State.OVER
+                self.win_conditions.append(win_conditions[condition])
+        if self.winner != "":
+            return State.OVER
         if " " not in self.grid:
             return State.DRAW
         else:
@@ -96,7 +98,7 @@ class Board:
         if self.winner != "":
             return self.winner
         else:
-            raise ValueError("Game's not over yet or it's a draw!")
+            return "draw"
 
     # External
     def undo(self) -> None:

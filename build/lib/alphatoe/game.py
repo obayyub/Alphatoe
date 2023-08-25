@@ -16,7 +16,11 @@ class State(Enum):
 
 
 class Board:
+<<<<<<< HEAD
     def __init__(self):
+=======
+    def __init__(self) -> None:
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
         self.grid = [" "] * 9  # The game board
         self.turn = "X"  # Who's turn is it?
         self.game_state: State = State.ONGOING
@@ -24,6 +28,10 @@ class Board:
         self.is_maximizer = True  # Useful for the minimax algorithm
         self.children: list[Board] = []
         self.winner = ""
+<<<<<<< HEAD
+=======
+        self.win_conditions: list[str] = [] 
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
 
     # Internal
     def swap_turn(self) -> None:
@@ -44,7 +52,11 @@ class Board:
             return True
         else:
             return False
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
     def get_state(self) -> State:
         return self.game_state
 
@@ -67,6 +79,7 @@ class Board:
 
     # Internal
     def set_game_state(self) -> State:
+<<<<<<< HEAD
         win_conditions = [
             (0, 1, 2),
             (3, 4, 5),
@@ -78,6 +91,19 @@ class Board:
             (2, 4, 6),
         ]
         for condition in win_conditions:
+=======
+        win_conditions = {
+            (0, 1, 2): "top row",
+            (3, 4, 5): "middle row",
+            (6, 7, 8): "bottom row",
+            (0, 3, 6): "left column",
+            (1, 4, 7): "middle column",
+            (2, 5, 8): "right column",
+            (0, 4, 8): "top left -> bottom right",
+            (2, 4, 6): "bottom left -> top right",
+        }
+        for condition in win_conditions.keys():
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
             if (
                 self.grid[condition[0]]
                 == self.grid[condition[1]]
@@ -85,7 +111,13 @@ class Board:
                 != " "
             ):
                 self.winner = self.grid[condition[0]]
+<<<<<<< HEAD
                 return State.OVER
+=======
+                self.win_conditions.append(win_conditions[condition])
+        if self.winner != "":
+            return State.OVER
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
         if " " not in self.grid:
             return State.DRAW
         else:
@@ -93,10 +125,19 @@ class Board:
 
     # External
     def get_winner(self) -> str:
+<<<<<<< HEAD
         if self.winner != "":
             return self.winner
         else:
             raise ValueError("Game's not over yet or it's a draw!")
+=======
+        if self.game_state == State.ONGOING:
+            raise Exception("Game is not over yet!")
+        elif self.winner != "":
+            return self.winner
+        else:
+            return "draw"
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
 
     # External
     def undo(self) -> None:
@@ -224,6 +265,35 @@ def make_random_best_move(board: Board) -> None:
     board.make_move(bestMove)
 
 
+<<<<<<< HEAD
+=======
+def get_all_minimax_games(
+    boards: list[Board],
+    minimax_turn: bool,
+    finished_boards: Optional[list[Board]] = None,
+) -> list[Board]:
+    if finished_boards == None:
+        finished_boards = []
+    ongoing_boards = []
+    if minimax_turn:
+        move_getter = get_best_moves
+    else:
+        move_getter = get_possible_moves
+    for board in boards:
+        if board.game_state != State.ONGOING:
+            finished_boards.append(board)
+        else:
+            for move in move_getter(board):
+                _board = deepcopy(board)
+                _board.make_move(move)
+                ongoing_boards.append(_board)
+    if ongoing_boards == []:
+        return finished_boards
+    else:
+        return get_all_minimax_games(ongoing_boards, not minimax_turn, finished_boards)
+
+
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1
 def determine_entropy(counts: list[int]) -> float:
     total_counts = sum(counts)
     entropy = 0.0
@@ -321,3 +391,42 @@ def autoregressive_guess(seq: list[int]):
 
     # The unsqueeze is just to make our evals happy
     return torch.stack(logits).unsqueeze(dim=0)
+<<<<<<< HEAD
+=======
+
+
+def play_game(seq: list[int]):
+    board = Board()
+    for move in seq[1:-1]:
+        try:
+            board.make_move(move)
+        except:
+            print("Invalid game")
+            break
+    board.draw_board()
+    return board
+
+
+def next_minimax_moves(seq: list[int]) -> list[int]:
+    board = Board()
+    for move in seq[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return [9]
+    if board.game_state != State.ONGOING:
+        return [9]
+    return get_best_moves(board)
+
+
+def next_possible_moves(seq: list[int]) -> list[int]:
+    board = Board()
+    for move in seq[1:]:
+        try:
+            board.make_move(move)
+        except:
+            return [9]
+    if board.game_state != State.ONGOING:
+        return [9]
+    return get_possible_moves(board)
+>>>>>>> f8d3afe19204fded419f8127f4ca7fe9915530e1

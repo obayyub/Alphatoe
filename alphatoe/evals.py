@@ -41,7 +41,6 @@ def _check_played_repeat_moves(game: list[int]) -> bool:
 
 def _check_if_illegal_moves(game: list[int]) -> bool:
     board = Board()
-    print(game)
     for move in game[1:-1]:
         if board.game_state == State.ONGOING:
             try:
