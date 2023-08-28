@@ -5,13 +5,20 @@ import json
 import matplotlib.pyplot as plt
 from copy import copy
 
+def get_device():
+    if torch.cuda.is_available():
+        return 'cuda'
+    elif torch.backends.mps.is_available():
+        return 'mps'
+    else:
+        return 'cpu'
 
 def numpy(t):
     return t.cpu().detach().numpy()
 
 
 def load_model(model_file_name: str):
-    weights = torch.load(model_file_name + ".pt")
+    weights = torch.load(model_file_name + ".pt", map_location=get_device())
     with open(model_file_name + ".json", "r") as f:
         args = json.load(f)
     model_cfg = HookedTransformerConfig(
@@ -26,7 +33,7 @@ def load_model(model_file_name: str):
         d_vocab_out=10,
         n_ctx=10,
         init_weights=True,
-        device=args["device"],
+        device=get_device(),
         seed=args["seed"],
     )
     model = HookedTransformer(model_cfg)
