@@ -236,6 +236,8 @@ def pca(data: Tensor, variance_explained: float = 0.95) -> Tensor:
 
 
 # TODO: add options to put the original ordering back
+# Use this to get fast inference even with games of differing lengths, if you don't care about the order they come back in
+# can also pass in a lambda wrapping capture_forward_pass as well
 def inference_on_games(model: HookedTransformer, games: list[list[int]]):
     with torch.no_grad():
         l_games = list(map(lambda l: len(l), games))
