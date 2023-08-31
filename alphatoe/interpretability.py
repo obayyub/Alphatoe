@@ -1,17 +1,20 @@
 import numpy as np
 import torch
+from torch import Tensor
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 import json
 import matplotlib.pyplot as plt
 from copy import copy
 
+
 def get_device():
     if torch.cuda.is_available():
-        return 'cuda'
+        return "cuda"
     elif torch.backends.mps.is_available():
-        return 'mps'
+        return "mps"
     else:
-        return 'cpu'
+        return "cpu"
+
 
 def numpy(t):
     return t.cpu().detach().numpy()
@@ -180,3 +183,70 @@ def neuron_ablated_loss(data, neuron):
     loss = F.cross_entropy(logits, target, reduction="none")
     loss.to("cpu").detach().numpy()
     return loss
+
+
+# Generic wrapper for easily capturing specific things in the model
+# Ex. capture_forward_pass(model, model.blocks[0].hook_resid_mid, torch.tensor([10,1,2,3]))
+def capture_forward_pass(model, model_path: torch.nn.Module, seq: torch.Tensor):
+    def hook(module, input, output):
+        captured = output.clone()
+        model_path.captured = captured
+
+    try:
+        handle = model_path.register_forward_hook(hook)
+        with torch.no_grad():
+            model(seq)
+        activations = model_path.captured
+        handle.remove()
+    except Exception as e:
+        raise e
+        handle.remove()
+
+    return activations
+
+
+# Principal component analysis, returns a dict containing commonly sought information
+def pca(data: Tensor, variance_explained: float = 0.95) -> Tensor:
+    mean_centered: Tensor = data - data.mean(dim=0)
+    cov_matrix = torch.mm(mean_centered.t(), mean_centered) / (
+        mean_centered.shape[0] - 1
+    )
+    eigenvalues, eigenvectors = torch.linalg.eig(cov_matrix)
+    real_eigenvalues: Tensor = eigenvalues.float()
+    sorted_indices = torch.argsort(real_eigenvalues, descending=True)
+    sorted_eigenvalues = real_eigenvalues[sorted_indices]
+    sorted_eigenvectors = eigenvectors[:, sorted_indices].float()
+    total_variance = torch.sum(sorted_eigenvalues)
+    R2 = sorted_eigenvalues / total_variance
+    cumulative_explained_variance = torch.cumsum(R2, dim=0)
+    components = (
+        torch.where(cumulative_explained_variance >= variance_explained)[0][0].item()
+        + 1
+    )
+    k_eigens = sorted_eigenvectors[:, :components]
+    projected_data = torch.mm(mean_centered, k_eigens)
+    out = {
+        "R2": R2[:components],
+        "variances": sorted_eigenvalues[:components],
+        "principal components": k_eigens,
+        "projected data": projected_data,
+    }
+
+    return out
+
+
+# TODO: add options to put the original ordering back
+def inference_on_games(model: HookedTransformer, games: list[list[int]]):
+    with torch.no_grad():
+        l_games = list(map(lambda l: len(l), games))
+        list.sort(l_games)
+        lens = list(set(l_games))
+        lens.sort()
+        # games are ascending, find first of each kind
+        batch_indices = [l_games.index(l) for l in lens] + [len(games) - 1]
+        data = [
+            torch.tensor(games[s:e])
+            for s, e in zip(batch_indices[:-1], batch_indices[1:])
+        ]
+        logits = [model(games) for games in data]
+        return logits
