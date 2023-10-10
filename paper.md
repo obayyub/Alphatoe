@@ -12,10 +12,16 @@
 1. It has a world model folks.
     a. Turn taking in attention heads - Have info
     b. Understands win conditions - don't know nothin'
-        a. Each move has associated positions in the residual stream - don't know nothin'
+        a. Each move has associated positions in the residual stream - know somethin'
             a. Subtract residual stream cases where certain move is present from cases where it's not present
             b. .95 of the variance is accounted for by 8 dimensions of the residual stream pre-mlp
             c. What is the PCA of the output of the individual attention heads? Are they writing to the same places?
+        b. Understand the MLP with sparse autoencoders
+        c. Can we trick the attention heads
+            0,1,2
+            mlp sees on move 1, move 3, and move 5
+            can we feed the head 0,1,2 and 1,3,5 
+            what if we feed an attention head an out of order sequence
     c. Understands legal moves - have info
         a. We have evals showing functional behavior - have info
         b. after 9 moves game is always over (w/ nice equation) - have info
