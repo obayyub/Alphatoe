@@ -127,7 +127,7 @@ def get_possible_moves(board: Board) -> list[int]:
 
 
 def generate_all_games(
-    boards: list[Board], finished_boards: Optional[list[Board]] = None
+    boards: list[Board] = [Board()], finished_boards: Optional[list[Board]] = None
 ) -> list[Board]:
     if finished_boards == None:
         finished_boards = []
