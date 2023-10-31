@@ -23,6 +23,9 @@ def rearrange(t: Tensor):
     """
     return einops.rearrange(t, "batch seq token -> (batch seq) token")
 
+def train_test_split(data):
+
+
 
 def train(
     model: HookedTransformer,
