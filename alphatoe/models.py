@@ -32,3 +32,7 @@ class SparseAutoEncoder(nn.Module):
         input = input - self.b_out
         acts = self.nonlinearity(input @ self.W_in + self.b_in)
         return (acts > 0).sum(0)
+
+    def get_activations(self, input: Tensor):
+        input = input - self.b_out
+        return self.nonlinearity(input @ self.W_in + self.b_in)
