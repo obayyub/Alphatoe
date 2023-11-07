@@ -24,9 +24,10 @@ class SparseAutoEncoder(nn.Module):
         input = input - self.b_out
         acts = self.nonlinearity(input @ self.W_in + self.b_in)
         l1_regularization = acts.abs().sum()  # / self.hidden_dim
+        l0 = (acts > 0).sum(-1).mean(0).mean(0)
         if pt:
             print(acts)
-        return l1_regularization, acts @ self.W_out + self.b_out
+        return l0, l1_regularization, acts @ self.W_out + self.b_out
 
     def get_act_density(self, input: Tensor):
         input = input - self.b_out
