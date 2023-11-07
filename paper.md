@@ -16,7 +16,7 @@
             a. Subtract residual stream cases where certain move is present from cases where it's not present
             b. .95 of the variance is accounted for by 8 dimensions of the residual stream pre-mlp
             c. What is the PCA of the output of the individual attention heads? Are they writing to the same places?
-        b. Understand the MLP with sparse autoencoders
+        b. Understand the MLP with sparse autoencoders - know somethin'
         c. Can we trick the attention heads
             0,1,2
             mlp sees on move 1, move 3, and move 5

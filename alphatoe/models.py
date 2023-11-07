@@ -24,7 +24,7 @@ class SparseAutoEncoder(nn.Module):
         input = input - self.b_out
         acts = self.nonlinearity(input @ self.W_in + self.b_in)
         l1_regularization = acts.abs().sum()  # / self.hidden_dim
-        l0 = (acts > 0).sum(-1).mean(0).mean(0)
+        l0 = (acts > 0).sum(dim=1).float().mean()
         if pt:
             print(acts)
         return l0, l1_regularization, acts @ self.W_out + self.b_out
