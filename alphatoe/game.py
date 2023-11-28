@@ -130,6 +130,7 @@ def generate_all_games(
     boards: list[Board] = [Board()], finished_boards: Optional[list[Board]] = None
 ) -> list[Board]:
     if finished_boards == None:
+        print('Generating all games...')
         finished_boards = []
     ongoing_boards: list[Board] = []
     for board in boards:
@@ -142,6 +143,7 @@ def generate_all_games(
             finished_boards.append(board)
 
     if ongoing_boards == []:
+        print('Finished generating all games')
         return finished_boards
     else:
         return generate_all_games(ongoing_boards, finished_boards=finished_boards)

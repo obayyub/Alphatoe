@@ -3,6 +3,7 @@ from torch import Tensor
 import numpy as np
 from functools import partial
 from plotly import express as px
+from plotly.subplots import make_subplots
 from plotly import graph_objects as go
 from typing import Optional, Any
 
@@ -99,7 +100,7 @@ inputs_heatmap = partial(
     color_continuous_midpoint=0.0,
 )
 
-def _get_filtered_acts(acts: Tensor) -> Tensor:
+def get_filtered_acts(acts: Tensor, just_indices: bool = False) -> Tensor:
     zero_elements = acts == 0
     fraction_zeros = torch.mean(zero_elements.float(), dim=1)
     mask = fraction_zeros > 0.90
@@ -111,7 +112,11 @@ def _get_filtered_acts(acts: Tensor) -> Tensor:
 
     string_indices = [str(index.item()) for index in indices]
 
-    return filtered_acts, string_indices
+
+    if just_indices:
+        return string_indices
+    else:
+        return filtered_acts, string_indices
 
 def _get_divisions(groups: list, num_games: int) -> (list, list):
     divisions = []
@@ -129,16 +134,16 @@ def _get_divisions(groups: list, num_games: int) -> (list, list):
 def imshow_comp_acts(
     acts: Tensor,
     groups: list,
-    line_color: str = 'red'
+    line_color: str = 'red',
+    show_fig: bool = True,
     ):
 
     acts = acts.T
     #get number of games
     num_games = acts.shape[1]
 
-    filtered_acts, string_indices = _get_filtered_acts(acts)
-
-    fig = imshow_div(filtered_acts, show_fig=False, aspect="auto", width=1000, height=1000)
+    filtered_acts, string_indices = get_filtered_acts(acts)
+    fig = imshow_div(filtered_acts, show_fig=False, aspect="auto", width=1000, height=650)
 
     vert_lines, x_labels = _get_divisions(groups, num_games)
 
@@ -157,5 +162,34 @@ def imshow_comp_acts(
         tickvals = np.arange(len(string_indices)),
         ticktext = string_indices
     )
+    #y axis title
+    fig.update_layout(yaxis_title="Feature Index")
+
+    if show_fig:
+        fig.show()
+    else:
+        return fig
+
+def hist_activations(acts: Tensor, feature: int, groups: list):
+    acts = to_numpy(acts)
+    feature = int(feature)
+    fig1 = px.histogram(acts[:2000, feature], nbins=100)
+    fig2 = px.histogram(acts[2000:4000, feature], nbins=100)
+    fig3 = px.histogram(acts[4000:6000, feature], nbins=100)
+    fig4 = px.histogram(acts[6000:, feature], nbins=100)
+
+
+    fig = make_subplots(rows=2, cols=2, subplot_titles=groups)
+
+    for i, f in enumerate([fig1, fig2, fig3, fig4]):
+        row = i // 2 + 1  # Determine the row: 1 for the first two, 2 for the next two
+        col = i % 2 + 1   # Determine the column: alternates between 1 and 2
+        for trace in f.data:
+            fig.add_trace(trace, row=row, col=col)
+
+    # Update layout if needed
+    fig.update_layout(height=600, width=800)
+    #no legend
+    fig.update_layout(showlegend=False)
     
-    fig.show()
+    return fig
