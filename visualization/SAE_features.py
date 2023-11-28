@@ -1,11 +1,23 @@
-from dash import Dash, html, dcc, callback, Output, Input
-from alphatoe import plot
+from dash import Dash, html, dcc, callback, Output, Input, State, callback_context
+from alphatoe import plot, game
 import plotly.express as px
 import pickle
 import torch
 
 with open("./scripts/SAE_features_by_token_8_move_games.pkl", "rb") as f:
     features_by_content = pickle.load(f)
+
+with open("./scripts/8_move_games.pkl", "rb") as f:
+    moves_by_content = pickle.load(f)
+
+def cat_moves(content):
+    return torch.cat(
+        [
+            moves_by_content[content]["contains"],
+            moves_by_content[content]["not_contains"],
+        ],
+        dim=0,
+    )
 
 def cat_features(content):
     return torch.cat(
@@ -46,7 +58,8 @@ app.layout = html.Div(
                 )
             ],
             style={'display': 'flex', 'flexDirection': 'row', 'gap': '20px'}
-        )
+        ),
+        html.Pre("Click on a bar to see the value!", id='some-output')
     ],
     style={'padding': '20px'}
 )
@@ -80,7 +93,22 @@ def update_graph_2(value1, value2):
     secondary_figure = plot.hist_activations(catted_features, value2, ["GameOver - Token Present", "GameOver, Token Not Present", "Game Ongoing, Token Present", "Game Ongoing, Token Not Present"])
     return secondary_figure
 
+@app.callback(
+    Output('some-output', 'children'),  # Replace with an appropriate Output
+    Input('graph-content-1', 'clickData'),  # Listening to click events on the first graph
+    State('dropdown-selection-1', 'value')  # Listening to the value of the dropdown
+)
 
+def display_click_data(clickData, dropdown_value):
+    if clickData:
+        x_value = clickData['points'][0]['x']
+        activation = clickData['points'][0]['z']
+        moves = cat_moves(dropdown_value)
+        seq = list(moves[x_value % 4000])
+        if x_value // 4000 > 0:
+            seq.pop()
+        return game.play_game(seq).sketch_board() + '\n' + f"Activation: {activation}"
+    return "Click on a bar to see the value!"
 
 if __name__ == "__main__":
     app.run(debug=True)

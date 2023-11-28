@@ -111,12 +111,14 @@ class Board:
     # External
     # Function to draw the game board
     def draw_board(self):
+        print(self.sketch_board())
+    
+    def sketch_board(self):
         row1 = "| {} | {} | {} |".format(self.grid[0], self.grid[1], self.grid[2])
         row2 = "| {} | {} | {} |".format(self.grid[3], self.grid[4], self.grid[5])
         row3 = "| {} | {} | {} |".format(self.grid[6], self.grid[7], self.grid[8])
-        print(row1)
-        print(row2)
-        print(row3)
+        return row1 + '\n' + row2 + '\n' + row3
+    
 
 
 def get_possible_moves(board: Board) -> list[int]:
@@ -369,7 +371,6 @@ def play_game(seq: list[int]):
             break
     board.draw_board()
     return board
-
 
 def next_minimax_moves(seq: list[int]) -> list[int]:
     board = Board()
