@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
+from typing import Optional
 
 
 class SparseAutoEncoder(nn.Module):
@@ -20,11 +21,19 @@ class SparseAutoEncoder(nn.Module):
         self.b_out = nn.Parameter(torch.zeros(mundane_dim))
         self.nonlinearity = nonlinearity
 
-    def forward(self, input: Tensor, pt=False):
+    def forward(
+        self,
+        input: Tensor,
+        pt=False,
+        feature_modulations: Optional[list[tuple[int, float]]] = None,
+    ):
         input = input - self.b_out
         acts = self.nonlinearity(input @ self.W_in + self.b_in)
         l1_regularization = acts.abs().sum()  # / self.hidden_dim
         l0 = (acts > 0).sum(dim=1).float().mean()
+        if feature_modulations:
+            for feature, multiplier in feature_modulations:
+                acts[:, :, feature] = acts[:, :, feature] * multiplier
         if pt:
             print(acts)
         return l0, l1_regularization, acts @ self.W_out + self.b_out

@@ -5,6 +5,7 @@ from transformer_lens import HookedTransformer, HookedTransformerConfig
 import json
 import matplotlib.pyplot as plt
 from copy import copy
+from typing import Optional
 
 
 def get_device():
@@ -252,3 +253,28 @@ def inference_on_games(model: HookedTransformer, games: list[list[int]]):
         ]
         logits = [model(games) for games in data]
         return logits
+
+
+def modulate_features(
+    autoenc,
+    model,
+    seq: Tensor,
+    feature_modulations: Optional[list[tuple[int, float]]] = None,
+) -> Tensor:
+    def hook(module, input, output):
+        result = output.clone()
+        # tt(result)
+        out = autoenc(result, feature_modulations=feature_modulations)[2]
+        return out
+        # module.captured_activations = result
+
+    try:
+        with torch.no_grad():
+            handle = model.blocks[0].mlp.hook_post.register_forward_hook(hook)
+            logits = model(seq)
+            handle.remove()
+    except Exception as e:
+        handle.remove()
+        raise e
+
+    return logits
