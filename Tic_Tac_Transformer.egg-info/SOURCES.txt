@@ -10,6 +10,7 @@ alphatoe/data.py
 alphatoe/evals.py
 alphatoe/game.py
 alphatoe/interpretability.py
+alphatoe/models.py
 alphatoe/plot.py
 alphatoe/train.py
 alphatoe/trie.py

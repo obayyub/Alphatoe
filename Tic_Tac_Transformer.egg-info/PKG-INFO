@@ -6,3 +6,5 @@ Maintainer: Jack Strand
 Maintainer-email: jackofthestrand@gmail.com
 Keywords: Transformers,AI,Interpretability
 Classifier: Programming Language :: Python :: 3
+Requires-Dist: torch
+Requires-Dist: transformer_lens
