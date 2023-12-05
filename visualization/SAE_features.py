@@ -235,8 +235,12 @@ def display_click_data(clickData, dropdown_value1, dropdown_value2, filtered_ind
         with torch.no_grad():
             mlp_logits = model(tseq)[0, -1, :]
             normal_logits = modulate_features(tseq)[0, -1, :]
-            ablated_logits = modulate_features(tseq, [(int(y_value), 0)])[0, -1, :]
-            intensified_logits = modulate_features(tseq, [(int(y_value), 2)])[0, -1, :]
+            ablated_logits = modulate_features(tseq, [(int(feature_index), 0)])[
+                0, -1, :
+            ]
+            intensified_logits = modulate_features(tseq, [(int(feature_index), 2)])[
+                0, -1, :
+            ]
         logits_matrix = prepare_logits_for_heatmap(
             mlp_logits, normal_logits, ablated_logits, intensified_logits
         )

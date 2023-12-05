@@ -263,10 +263,8 @@ def modulate_features(
 ) -> Tensor:
     def hook(module, input, output):
         result = output.clone()
-        # tt(result)
         out = autoenc(result, feature_modulations=feature_modulations)[2]
         return out
-        # module.captured_activations = result
 
     try:
         with torch.no_grad():
