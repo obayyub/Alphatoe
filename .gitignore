@@ -2,3 +2,5 @@ __pycache__
 venv/
 .ipynb_checkpoints
 data/
+scripts/8_move_games.pkl
+scripts/SAE_features_by_token_8_move_games.pkl
