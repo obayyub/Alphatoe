@@ -173,10 +173,10 @@ def imshow_comp_acts(
 def hist_activations(acts: Tensor, feature: int, groups: list):
     acts = to_numpy(acts)
     feature = int(feature)
-    fig1 = px.histogram(acts[:2000, feature], nbins=100)
+    fig1 = px.histogram(acts[:2000, feature], nbins=10000)
     fig2 = px.histogram(acts[2000:4000, feature], nbins=100)
     fig3 = px.histogram(acts[4000:6000, feature], nbins=100)
-    fig4 = px.histogram(acts[6000:, feature], nbins=100)
+    fig4 = px.histogram(acts[6000:, feature], nbins=10000)
 
 
     fig = make_subplots(rows=2, cols=2, subplot_titles=groups)

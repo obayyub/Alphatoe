@@ -11,8 +11,8 @@ import tqdm
 #seed
 torch.manual_seed(1337)
 
-hidden_sizes = [4096]
-lamdas = [1e-7]
+hidden_sizes = [512]
+lamdas = [0.25e-7]
 results = []
 
 for hidden_size in tqdm.tqdm(hidden_sizes):
@@ -21,9 +21,9 @@ for hidden_size in tqdm.tqdm(hidden_sizes):
         loss_fn = torch.nn.functional.mse_loss
         optimizer = torch.optim.Adam(autoenc.parameters(), lr=1e-4)
 
-        act_data = torch.load("notebooks/all_games_act_data.pt")
+        act_data = torch.load("data/all_games_act_data.pt")
 
-        epochs = 301
+        epochs = 601
         batch_size = int(2**15)
         losses = []
         for epoch in tqdm.tqdm(range(epochs)):
@@ -56,6 +56,6 @@ for hidden_size in tqdm.tqdm(hidden_sizes):
             #        "L0": l0.item(),
             #    })
         torch.save(autoenc.state_dict(), f"scripts/models/SAE_hidden_size-{hidden_size}_lamda-{lamda}_epoch-{epochs-1}.pt")
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
 #df = pd.DataFrame(results)
-#df.to_csv("data/SAE_hyperparam_results_epoch-2.csv")
+#df.to_csv("data/SAE_hyperparam_results_decoder_unitnorm.csv")

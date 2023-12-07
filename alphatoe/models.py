@@ -21,6 +21,12 @@ class SparseAutoEncoder(nn.Module):
         self.b_out = nn.Parameter(torch.zeros(mundane_dim))
         self.nonlinearity = nonlinearity
 
+    def normalize_weights(self):
+        with torch.no_grad():
+            norms = self.W_out.norm(p=2, dim=0, keepdim=True)
+            self.W_out.div_(norms)
+
+
     def forward(
         self,
         input: Tensor,
@@ -36,6 +42,7 @@ class SparseAutoEncoder(nn.Module):
                 acts[:, :, feature] = acts[:, :, feature] * multiplier
         if pt:
             print(acts)
+        self.normalize_weights()
         return l0, l1_regularization, acts @ self.W_out + self.b_out
 
     def get_act_density(self, input: Tensor):
