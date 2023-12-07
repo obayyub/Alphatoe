@@ -12,7 +12,7 @@ import tqdm
 torch.manual_seed(1337)
 
 hidden_sizes = [512]
-lamdas = [0.25e-7]
+lamdas = [1e-7]
 results = []
 
 for hidden_size in tqdm.tqdm(hidden_sizes):

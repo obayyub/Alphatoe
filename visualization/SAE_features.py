@@ -21,7 +21,9 @@ logits_data = []
 
 autoenc = models.SparseAutoEncoder(512, 512).cuda()
 autoenc.load_state_dict(
-    torch.load("scripts/models/SAE_hidden_size-512_lamda-2.5e-08_epoch-600.pt")
+    torch.load(
+        "scripts/models/SAE_hidden_size-512_lamda-1e-07_epoch-600.pt"
+    )
 )
 model = interpretability.load_model(
     "./scripts/models/prob all 8 layer control-20230718-185339"
