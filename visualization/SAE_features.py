@@ -105,6 +105,24 @@ app.layout = html.Div(
         html.Pre("Click on a bar to see the value!", id="some-output"),
         dcc.Graph(id="logits-graph"),
         dcc.Store(id="filtered-indices"),
+        html.H3("Select Ablation Type"),
+        dcc.Dropdown(
+            ["multiplication", "addition"],
+            "multiplication",
+            id="ablation-type-dropdown",
+        ),
+        html.H3("Ablation Value"),
+        dcc.Input(
+            id="ablation-value",
+            type="number",
+            value=1.0,  # default value
+        ),
+        html.H3("Intensification Value"),
+        dcc.Input(
+            id="intensification-value",
+            type="number",
+            value=1.0,  # default value
+        ),
     ],
     style={"padding": "20px"},
 )
@@ -215,8 +233,19 @@ def prepare_logits_for_heatmap(
         "dropdown-selection-2", "value"
     ),  # Listening to the value of the second dropdown
     State("filtered-indices", "data"),
+    State("ablation-type-dropdown", "value"),
+    State("ablation-value", "value"),
+    State("intensification-value", "value"),
 )
-def display_click_data(clickData, dropdown_value1, dropdown_value2, filtered_indices):
+def display_click_data(
+    clickData,
+    dropdown_value1,
+    dropdown_value2,
+    filtered_indices,
+    ablation_type,
+    ablation_value,
+    intensification_value,
+):
     if clickData:
         x_value = clickData["points"][0]["x"]
         y_value = clickData["points"][0]["y"]
@@ -233,12 +262,22 @@ def display_click_data(clickData, dropdown_value1, dropdown_value2, filtered_ind
         with torch.no_grad():
             mlp_logits = model(tseq)[0, -1, :]
             normal_logits = modulate_features(tseq, straight_passthrough=True)[0, -1, :]
-            ablated_logits = modulate_features(tseq, [(int(feature_index), -1)])[
-                0, -1, :
-            ]
-            intensified_logits = modulate_features(tseq, [(int(feature_index), 1)])[
-                0, -1, :
-            ]
+            if ablation_type == "multiplication":
+                ablated_logits = modulate_features(
+                    tseq, [(int(feature_index), -ablation_value)], modulation_type="*"
+                )[0, -1, :]
+                intensified_logits = modulate_features(
+                    tseq,
+                    [(int(feature_index), intensification_value)],
+                    modulation_type="*",
+                )[0, -1, :]
+            else:
+                ablated_logits = modulate_features(
+                    tseq, [(int(feature_index), -1)], modulation_type="+"
+                )[0, -1, :]
+                intensified_logits = modulate_features(
+                    tseq, [(int(feature_index), 1)], modulation_type="+"
+                )[0, -1, :]
         logits_matrix = prepare_logits_for_heatmap(
             mlp_logits, normal_logits, ablated_logits, intensified_logits
         )

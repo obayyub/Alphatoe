@@ -261,10 +261,15 @@ def modulate_features(
     seq: Tensor,
     feature_modulations: Optional[list[tuple[int, float]]] = None,
     straight_passthrough=False,
+    modulation_type="*",
 ) -> Tensor:
     def hook(module, input, output):
         result = output.clone()
-        out_w_ablation = autoenc(result, feature_modulations=feature_modulations)[2]
+        out_w_ablation = autoenc(
+            result,
+            feature_modulations=feature_modulations,
+            modulation_type=modulation_type,
+        )[2]
         out = autoenc(result)[2]
 
         if straight_passthrough:
