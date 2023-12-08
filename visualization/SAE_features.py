@@ -19,11 +19,9 @@ def to_list(tensor):
 
 logits_data = []
 
-autoenc = models.SparseAutoEncoder(512, 512).cuda()
+autoenc = models.SparseAutoEncoder(512, 4096).cuda()
 autoenc.load_state_dict(
-    torch.load(
-        "scripts/models/SAE_hidden_size-512_lamda-2.5e-08_epoch-600.pt"
-    )
+    torch.load("scripts/models/SAE_hidden_size-512_lamda-2.5e-08_epoch-600.pt")
 )
 model = interpretability.load_model(
     "./scripts/models/prob all 8 layer control-20230718-185339"
@@ -64,7 +62,7 @@ app = Dash(__name__)
 app.layout = html.Div(
     [
         html.H1(
-            "Sparse Autoencoder Features and Activations by Token",
+            f"{autoenc.W_in.shape} Sparse Autoencoder Filtered Features and Activations by Token",
             style={"textAlign": "center"},
         ),
         html.Div(
@@ -234,11 +232,11 @@ def display_click_data(clickData, dropdown_value1, dropdown_value2, filtered_ind
         print(f"y_value is {y_value}")
         with torch.no_grad():
             mlp_logits = model(tseq)[0, -1, :]
-            normal_logits = modulate_features(tseq)[0, -1, :]
-            ablated_logits = modulate_features(tseq, [(int(feature_index), 0)])[
+            normal_logits = modulate_features(tseq, straight_passthrough=True)[0, -1, :]
+            ablated_logits = modulate_features(tseq, [(int(feature_index), -1)])[
                 0, -1, :
             ]
-            intensified_logits = modulate_features(tseq, [(int(feature_index), 2)])[
+            intensified_logits = modulate_features(tseq, [(int(feature_index), 1)])[
                 0, -1, :
             ]
         logits_matrix = prepare_logits_for_heatmap(

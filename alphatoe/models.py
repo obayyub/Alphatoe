@@ -32,14 +32,24 @@ class SparseAutoEncoder(nn.Module):
         input: Tensor,
         pt=False,
         feature_modulations: Optional[list[tuple[int, float]]] = None,
+        modulation_type: str = "*",
     ):
         input = input - self.b_out
         acts = self.nonlinearity(input @ self.W_in + self.b_in)
         l1_regularization = acts.abs().sum()  # / self.hidden_dim
         l0 = (acts > 0).sum(dim=1).float().mean()
+        if modulation_type = "*":
+            modulator = lambda l,r: l * r
+        elif modulation_type = "+":
+            modulator = lambda l,r: l + r
+        else:
+            assert False, ("unknown modulator type")
         if feature_modulations:
             for feature, multiplier in feature_modulations:
-                acts[:, :, feature] = acts[:, :, feature] * multiplier
+                print(f"feature {feature} before: {acts[:,:,feature]}")
+                acts[:, :, feature] = modulator(acts[:, :, feature], multiplier)
+                print(f"feature {feature} after: {acts[:,:,feature]}")
+                print()
         if pt:
             print(acts)
         self.normalize_weights()
