@@ -26,7 +26,6 @@ class SparseAutoEncoder(nn.Module):
             norms = self.W_out.norm(p=2, dim=0, keepdim=True)
             self.W_out.div_(norms)
 
-
     def forward(
         self,
         input: Tensor,
@@ -38,12 +37,12 @@ class SparseAutoEncoder(nn.Module):
         acts = self.nonlinearity(input @ self.W_in + self.b_in)
         l1_regularization = acts.abs().sum()  # / self.hidden_dim
         l0 = (acts > 0).sum(dim=1).float().mean()
-        if modulation_type = "*":
-            modulator = lambda l,r: l * r
-        elif modulation_type = "+":
-            modulator = lambda l,r: l + r
+        if modulation_type == "*":
+            modulator = lambda l, r: l * r
+        elif modulation_type == "+":
+            modulator = lambda l, r: l + r
         else:
-            assert False, ("unknown modulator type")
+            assert False, "unknown modulator type"
         if feature_modulations:
             for feature, multiplier in feature_modulations:
                 print(f"feature {feature} before: {acts[:,:,feature]}")

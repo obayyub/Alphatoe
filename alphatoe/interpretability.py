@@ -260,11 +260,17 @@ def modulate_features(
     model,
     seq: Tensor,
     feature_modulations: Optional[list[tuple[int, float]]] = None,
+    straight_passthrough=False,
 ) -> Tensor:
     def hook(module, input, output):
         result = output.clone()
-        out = autoenc(result, feature_modulations=feature_modulations)[2]
-        return out
+        out_w_ablation = autoenc(result, feature_modulations=feature_modulations)[2]
+        out = autoenc(result)[2]
+
+        if straight_passthrough:
+            return out
+        else:
+            return out_w_ablation + (result - out)
 
     try:
         with torch.no_grad():
