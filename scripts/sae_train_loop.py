@@ -12,8 +12,9 @@ import tqdm
 torch.manual_seed(1337)
 
 hidden_sizes = [512]
-lamdas = [1e-7]
+lamdas = [1e-9, 2.5e-8, 5e-8, 7.5e-8, 1e-7, 1.25e-7, 1.5e-7]
 results = []
+batch_size = int(2**12)
 
 for hidden_size in tqdm.tqdm(hidden_sizes):
     for lamda in tqdm.tqdm(lamdas):
@@ -24,7 +25,6 @@ for hidden_size in tqdm.tqdm(hidden_sizes):
         act_data = torch.load("data/all_games_act_data.pt")
 
         epochs = 601
-        batch_size = int(2**15)
         losses = []
         for epoch in tqdm.tqdm(range(epochs)):
             for batch in range(0, act_data.shape[0], batch_size):
@@ -46,16 +46,18 @@ for hidden_size in tqdm.tqdm(hidden_sizes):
                 with torch.no_grad():
                     last_loss = loss_fn(guess, dat, reduction="none")
             
-            #if epoch % 30 == 0:
-            #    results.append({
-            #        "hidden_size": hidden_size,
-            #        "lamda": lamda,
-            #        "epoch": epoch+1,
-            #        "MSE": mse_loss.item(),
-            #        "L1": sparse_loss.item(),
-            #        "L0": l0.item(),
-            #    })
-        torch.save(autoenc.state_dict(), f"scripts/models/SAE_hidden_size-{hidden_size}_lamda-{lamda}_epoch-{epochs-1}.pt")
-        #torch.cuda.empty_cache()
-#df = pd.DataFrame(results)
-#df.to_csv("data/SAE_hyperparam_results_decoder_unitnorm.csv")
+            if epoch % 30 == 0:
+                results.append({
+                    "hidden_size": hidden_size,
+                    "lamda": lamda,
+                    "batch_size": batch_size,
+                    "epoch": epoch+1,
+                    "MSE": mse_loss.item(),
+                    "L1": sparse_loss.item(),
+                    "L0": l0.item(),
+                    'loss': loss.item()
+                })
+        torch.save(autoenc.state_dict(), f"scripts/models/SAE_hidden_size-{hidden_size}_lamda-{lamda}_epoch-{epochs-1}_batch_{batch_size}.pt")
+        torch.cuda.empty_cache()
+df = pd.DataFrame(results)
+df.to_csv("data/SAE_hyperparam_results_decoder_unitnorm_batch_size.csv")
