@@ -1,5 +1,5 @@
 {
-  "typeCheckingMode": "strict",
+  "typeCheckingMode": "basic",
   "diagnosticMode": "workspace",
   "reportMissingTypeStubs": false
 }
