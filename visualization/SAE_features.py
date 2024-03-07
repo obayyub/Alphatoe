@@ -6,10 +6,10 @@ import pickle
 import torch
 from functools import partial
 
-with open("4096_SAE_features_by_token_8_move_games.pkl", "rb") as f:
+with open("SAE_features_by_token_8_move_games_512_lamda-2.5e-08_epoch-600_batch_32768.pkl", "rb") as f:
     features_by_content = pickle.load(f)
 
-with open("4096_8_move_games.pkl", "rb") as f:
+with open("8_move_games.pkl", "rb") as f:
     moves_by_content = pickle.load(f)
 
 
@@ -22,7 +22,7 @@ logits_data = []
 autoenc = models.SparseAutoEncoder(512, 512).cuda()
 autoenc.load_state_dict(
     torch.load(
-        "scripts/models/SAE_hidden_size-512_lamda-1e-07_epoch-600.pt"
+        "./scripts/models/SAE_hidden_size-512_lamda-2.5e-08_epoch-600_batch_32768.pt"
     )
 )
 model = interpretability.load_model(
