@@ -263,19 +263,20 @@ def modulate_features(
     straight_passthrough=False,
     modulation_type="*",
 ) -> Tensor:
+    print(f"feature_modulations: {feature_modulations}")
     def hook(module, input, output):
         result = output.clone()
         out_w_ablation = autoenc(
             result,
             feature_modulations=feature_modulations,
             modulation_type=modulation_type,
-        )[2]
-        out = autoenc(result)[2]
-
+        )[3]
+        out = autoenc(result)[3]
         if straight_passthrough:
             return out
         else:
-            return out_w_ablation + (result - out)
+            return out_w_ablation 
+        #+ (result - out)
 
     try:
         with torch.no_grad():

@@ -6,7 +6,7 @@ import pickle
 import torch
 from functools import partial
 
-with open("SAE_features_by_token_8_move_games_512_lamda-2.5e-08_epoch-600_batch_32768.pkl", "rb") as f:
+with open("SAE_features_by_token_8_move_games_512_lamda-2.5e-08_epoch-600_batch_4096_coslam_0.001.pkl", "rb") as f:
     features_by_content = pickle.load(f)
 
 with open("8_move_games.pkl", "rb") as f:
@@ -14,7 +14,7 @@ with open("8_move_games.pkl", "rb") as f:
 
 
 def to_list(tensor):
-    return [i.item for i in tensor]
+    return [i.item() for i in tensor]
 
 
 logits_data = []
@@ -22,7 +22,7 @@ logits_data = []
 autoenc = models.SparseAutoEncoder(512, 512).cuda()
 autoenc.load_state_dict(
     torch.load(
-        "./scripts/models/SAE_hidden_size-512_lamda-2.5e-08_epoch-600_batch_32768.pt"
+        "scripts/models/SAE_hidden_size-512_lamda-2.5e-08_batch_4096_wo_l1_cosine-0.001.pt"
     )
 )
 model = interpretability.load_model(
@@ -117,7 +117,7 @@ app.layout = html.Div(
         dcc.Input(
             id="ablation-value",
             type="number",
-            value=1.0,  # default value
+            value=0.0,  # default value
         ),
         html.H3("Intensification Value"),
         dcc.Input(
@@ -280,6 +280,10 @@ def display_click_data(
                 intensified_logits = modulate_features(
                     tseq, [(int(feature_index), 1)], modulation_type="+"
                 )[0, -1, :]
+        print(f"mlp_logits is {mlp_logits}"
+              f"normal_logits is {normal_logits}"
+              f"ablated_logits is {ablated_logits}"
+              f"intensified_logits is {intensified_logits}")
         logits_matrix = prepare_logits_for_heatmap(
             mlp_logits, normal_logits, ablated_logits, intensified_logits
         )

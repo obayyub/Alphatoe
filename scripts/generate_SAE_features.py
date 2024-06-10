@@ -16,7 +16,7 @@ move_count = 8
 autoenc = models.SparseAutoEncoder(512, 512).cuda()
 autoenc.load_state_dict(
     torch.load(
-        "./scripts/models/SAE_hidden_size-512_lamda-1e-09_epoch-600_batch_32768.pt"
+        "scripts/models/SAE_hidden_size-512_lamda-2.5e-08_batch_4096_wo_l1_cosine-0.pt"
     )
 )
 model = interpretability.load_model(
@@ -95,7 +95,7 @@ features_by_content = {
 print("generated activations by content dict")
 
 # save the json
-with open(f"SAE_features_by_token_{move_count}_move_games_512_lamda-1e-09_epoch-600_batch_32768.pkl", "wb") as f:
+with open(f"SAE_features_by_token_{move_count}_move_games_512_lamda-2.5e-08_epoch-600_batch_4096_coslam_0.pkl", "wb") as f:
     pickle.dump(features_by_content, f)
 
 with open(f"{move_count}_move_games.pkl", "wb") as f:
