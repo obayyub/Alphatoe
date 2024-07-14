@@ -82,9 +82,10 @@ def train(
             if save_checkpoints:
                 model_checkpoints.append(deepcopy(model.state_dict()))
 
-        print(
-            f"Epoch {epoch} | Train Loss: {train_loss.item()} | Test Loss: {test_loss.item()}"
-        )
+        if epoch % 100 == 0:
+            print(
+                f"Epoch {epoch} | Train Loss: {train_loss.item()} | Test Loss: {test_loss.item()}"
+            )
 
     df = pd.DataFrame({})
     if save_losses:
