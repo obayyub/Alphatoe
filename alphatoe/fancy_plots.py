@@ -23,6 +23,17 @@ def number_to_grid_position(num: int) -> tuple:
     col = num % 3
     return row, col
 
+def map_attn_to_board(attn: Tensor, moves: list[int]) -> np.ndarray:
+    attn = to_numpy(attn, flat=True)
+    #zip moves and attn together
+    moves_attn = list(zip(moves, attn))
+    board_attn = np.zeros(9)
+    for pair in moves_attn:
+        board_attn[pair[0]] = pair[1]
+    #reshape board_attn to 3x3
+    board_attn = board_attn.reshape(3,3)
+    return board_attn
+
 def moves_seq_to_player_moves(moves: list[int]) -> dict:
     board_moves = {
         'x': [],
@@ -48,7 +59,7 @@ def add_board_moves(fig, board_moves: dict) -> None:
                     yref="y",
                     text=player,
                     showarrow=False,
-                    font=dict(size=80),
+                    font=dict(size=80, color="#808080", family='Arial'),
                     yanchor="middle",
                     xanchor="center"
                 )
@@ -57,7 +68,7 @@ def add_board_moves(fig, board_moves: dict) -> None:
 
 def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
     pattern = to_numpy(pattern)
-    # last token value
+    
     game_over_pred = round(float(pattern[-1]), 2)
     #remove last position from pattern
     pattern = pattern[:-1]
@@ -69,7 +80,7 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
     board_moves = moves_seq_to_player_moves(moves)
 
     color_scale = [
-        [0, 'rgb(255,255,255)'],
+        [0, '#F5F5F5'],
         [1, color]
     ]
 
@@ -78,6 +89,13 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
         colorscale=color_scale,
         zmin=0,
         zmax=0.5,
+        colorbar=dict(
+            thickness=15,
+            len=1,
+            outlinecolor="black",
+            outlinewidth=0.5,
+            titleside="right"
+        )
     ))
     add_board_moves(fig, board_moves)
 
@@ -89,7 +107,7 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
         yref="paper",
         text=f"Game Over Prediction: {game_over_pred}",
         showarrow=False,
-        font=dict(size=20),
+        font=dict(size=25, color="#333333", family='Arial'),
     )
 
     fig.update_layout(
@@ -98,7 +116,7 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
             'x': 0.5,
             'xanchor': 'center',
             'yanchor': 'top',
-            'font': dict(size=20)
+            'font': dict(size=30, color="#333333", family='Arial')
         },
         xaxis=dict(
             showgrid=False,
@@ -119,13 +137,79 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
         width=500,
         height=500,
         margin=dict(l=40, r=40, t=60, b=60),
-        plot_bgcolor='white'
+        plot_bgcolor='#F5F5F5'
     )
     # Add grid lines and border
     for i in range(4):
         fig.add_shape(type="line", x0=i-0.5, y0=-0.5, x1=i-0.5, y1=2.5, 
-                      line=dict(color="black", width=2 if i in [0, 3] else 1))
+                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
         fig.add_shape(type="line", x0=-0.5, y0=i-0.5, x1=2.5, y1=i-0.5, 
-                      line=dict(color="black", width=2 if i in [0, 3] else 1))
+                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
+    #show figure
+    fig.show()
+
+def board_attn_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
+    #drop first element of pattern
+    pattern = pattern[1:]
+
+    attn_board = map_attn_to_board(pattern, moves)
+
+    board_moves = moves_seq_to_player_moves(moves)
+
+    color_scale = [
+        [0, '#F5F5F5'],
+        [1, color]
+    ]
+
+    fig = go.Figure(data=go.Heatmap(
+        z = attn_board,
+        colorscale=color_scale,
+        zmin=0,
+        zmax=0.5,
+        colorbar=dict(
+            thickness=15,
+            len=1,
+            outlinecolor="black",
+            outlinewidth=0.5,
+            titleside="right"
+        )
+    ))
+    add_board_moves(fig, board_moves)
+
+    fig.update_layout(
+        title={
+            'text': title,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': dict(size=30, color="#333333", family='Arial')
+        },
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            showline=False,
+            range=[-0.5, 2.5],
+            scaleanchor='y',
+            scaleratio = 1
+        ),
+        yaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            showline=False,
+            range=[2.5, -0.5]  # Reverse y-axis to match game board orientation
+        ),
+        width=500,
+        height=500,
+        margin=dict(l=40, r=40, t=60, b=60),
+        plot_bgcolor='#F5F5F5'
+    )
+    # Add grid lines and border
+    for i in range(4):
+        fig.add_shape(type="line", x0=i-0.5, y0=-0.5, x1=i-0.5, y1=2.5, 
+                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
+        fig.add_shape(type="line", x0=-0.5, y0=i-0.5, x1=2.5, y1=i-0.5, 
+                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
     #show figure
     fig.show()
