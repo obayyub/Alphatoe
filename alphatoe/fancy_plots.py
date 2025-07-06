@@ -54,12 +54,12 @@ def add_board_moves(fig, board_moves: dict) -> None:
             annotations.append(
                 dict(
                     x=col,
-                    y=row-0.05,
+                    y=row-0.1,
                     xref="x",
                     yref="y",
                     text=player,
                     showarrow=False,
-                    font=dict(size=80, color="#808080", family='Arial'),
+                    font=dict(size=250, color="#808080", family='Arial'),
                     yanchor="middle",
                     xanchor="center"
                 )
@@ -90,11 +90,16 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
         zmin=0,
         zmax=0.5,
         colorbar=dict(
-            thickness=15,
-            len=1,
+            thickness=30,
+            len=0.9,
             outlinecolor="black",
-            outlinewidth=0.5,
-            titleside="right"
+            outlinewidth=5,
+            ticklen=20,
+            tickwidth=5,
+            ticklabelposition="outside left",
+            #title=dict(text="Move Probability", font=dict(size=50, color="#333333", family='Arial')),
+            orientation="v",
+            tickfont=dict(size=50, color="#333333", family='Arial'),
         )
     ))
     add_board_moves(fig, board_moves)
@@ -134,17 +139,17 @@ def board_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> None:
             showline=False,
             range=[2.5, -0.5]  # Reverse y-axis to match game board orientation
         ),
-        width=500,
-        height=500,
+        width=1000,
+        height=1000,
         margin=dict(l=40, r=40, t=60, b=60),
-        plot_bgcolor='#F5F5F5'
+        plot_bgcolor='#ffffff'
     )
     # Add grid lines and border
     for i in range(4):
         fig.add_shape(type="line", x0=i-0.5, y0=-0.5, x1=i-0.5, y1=2.5, 
-                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
+                      line=dict(color="black", width=10 if i in [0, 3] else 5))
         fig.add_shape(type="line", x0=-0.5, y0=i-0.5, x1=2.5, y1=i-0.5, 
-                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
+                      line=dict(color="black", width=10 if i in [0, 3] else 5))
     #show figure
     fig.show()
 
@@ -166,12 +171,19 @@ def board_attn_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> 
         colorscale=color_scale,
         zmin=0,
         zmax=0.5,
+        #dpi
+
         colorbar=dict(
-            thickness=15,
-            len=1,
+            thickness=30,
+            len=0.9,
             outlinecolor="black",
-            outlinewidth=0.5,
-            titleside="right"
+            outlinewidth=5,
+            ticklen=20,
+            tickwidth=5,
+            ticklabelposition="outside left",
+            #title=dict(text="Move Probability", font=dict(size=50, color="#333333", family='Arial')),
+            orientation="v",
+            tickfont=dict(size=50, color="#333333", family='Arial')
         )
     ))
     add_board_moves(fig, board_moves)
@@ -200,16 +212,16 @@ def board_attn_heatmap(pattern: Tensor, moves: list, title: str, color: str) -> 
             showline=False,
             range=[2.5, -0.5]  # Reverse y-axis to match game board orientation
         ),
-        width=500,
-        height=500,
+        width=1000,
+        height=1000,
         margin=dict(l=40, r=40, t=60, b=60),
-        plot_bgcolor='#F5F5F5'
+        plot_bgcolor='#ffffff'
     )
     # Add grid lines and border
     for i in range(4):
         fig.add_shape(type="line", x0=i-0.5, y0=-0.5, x1=i-0.5, y1=2.5, 
-                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
+                      line=dict(color="black", width=10 if i in [0, 3] else 5))
         fig.add_shape(type="line", x0=-0.5, y0=i-0.5, x1=2.5, y1=i-0.5, 
-                      line=dict(color="black", width=1 if i in [0, 3] else 0.5))
+                      line=dict(color="black", width=10 if i in [0, 3] else 5))
     #show figure
     fig.show()

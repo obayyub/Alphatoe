@@ -39,6 +39,7 @@ def train(
     batch_size: int = DEFAULT_BATCH_SIZE,
     save_losses: bool = True,
     save_checkpoints: bool = True,
+    save_attention_weights: bool = False,
 ):
     """Trains models with specified data and hyperparameters.
 
@@ -51,6 +52,9 @@ def train(
 
     if save_checkpoints:
         model_checkpoints = []
+
+    if save_attention_weights:
+        attention_weights_checkpoints = []
 
     if optimizer is None:
         optimizer = t.optim.AdamW(
@@ -82,6 +86,24 @@ def train(
             if save_checkpoints:
                 model_checkpoints.append(deepcopy(model.state_dict()))
 
+        # Save attention weights every 10 epochs
+        if save_attention_weights and epoch % 10 == 0:
+            # Define the sequence for deterministic positional embeddings
+            seq_fwd = t.tensor([[10, 0, 1, 2, 3, 4, 5, 7, 8, 6]]).to(model.cfg.device)
+            
+            with t.inference_mode():
+                # Get resolved positional embeddings for the specific sequence
+                pos_emb = model.pos_embed(seq_fwd, 0)[0]  # Shape: (10, d_model)
+                
+            attention_weights = {
+                'epoch': epoch,
+                'resolved_pos_embeddings': pos_emb.detach().clone(),
+                'W_K': deepcopy(model.W_K.detach().clone()),
+                'W_Q': deepcopy(model.W_Q.detach().clone()),
+                'sequence': seq_fwd.cpu(),  # Save sequence on CPU for storage
+            }
+            attention_weights_checkpoints.append(attention_weights)
+
         if epoch % 100 == 0:
             print(
                 f"Epoch {epoch} | Train Loss: {train_loss.item()} | Test Loss: {test_loss.item()}"
@@ -97,5 +119,9 @@ def train(
         print("Saving model checkpoint dataframe...")
         df["model checkpoints"] = model_checkpoints
         print("Model checkpoints dataframe created!")
+    if save_attention_weights:
+        print("Saving attention weights dataframe...")
+        df["attention_weights"] = attention_weights_checkpoints
+        print("Attention weights dataframe created!")
 
     return (model, df)

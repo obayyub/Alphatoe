@@ -8,6 +8,7 @@ Tic_Tac_Transformer.egg-info/top_level.txt
 alphatoe/__init__.py
 alphatoe/data.py
 alphatoe/evals.py
+alphatoe/fancy_plots.py
 alphatoe/game.py
 alphatoe/interpretability.py
 alphatoe/models.py

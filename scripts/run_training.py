@@ -66,6 +66,7 @@ def main(args: argparse.Namespace):
         batch_size=args.batch_size,
         save_losses=args.save_losses,
         save_checkpoints=args.save_checkpoints,
+        save_attention_weights=args.save_attention_weights,
     )
 
     print("Saving model weights to disk...")
@@ -77,6 +78,12 @@ def main(args: argparse.Namespace):
         save_training_data(training_data, args.experiment_name, timestamp, model_dir)
         print("Training data saved!")
 
+    if args.save_attention_weights and "attention_weights" in training_data.columns:
+        print("Saving attention weights to disk...")
+        attention_weights_data = training_data["attention_weights"].iloc[0]  # Get the list from the dataframe
+        save_attention_weights(attention_weights_data, args.experiment_name, timestamp, model_dir)
+        print("Attention weights saved!")
+
     if args.eval_model:
         num_games = 2000
         print("Sampling games...")
@@ -85,7 +92,10 @@ def main(args: argparse.Namespace):
         error_rates = evals.eval_model(games)
         for eval in error_rates:
             print(f"{eval} : {error_rates[eval]}")
-
+        #save error rates to disk
+        save_evals(error_rates, args.experiment_name, timestamp, model_dir)
+        
+            
 
 def create_hooked_transformer_config(
     args: argparse.Namespace,
@@ -161,6 +171,15 @@ def save_training_data(
 ):
     df.to_csv(f"{model_dir}{experiment_name} training data-{timestamp}.csv")
 
+#save evals
+def save_evals(evals: dict, experiment_name: str, timestamp: str, model_dir: str):
+    with open(f"{model_dir}{experiment_name} evals-{timestamp}.json", "w+") as f:
+        json.dump(evals, f, indent=4)
+
+#save attention weights
+def save_attention_weights(attention_weights: list, experiment_name: str, timestamp: str, model_dir: str):
+    """Save attention weights (pos_embed, W_K, W_Q) to disk"""
+    torch.save(attention_weights, f"{model_dir}{experiment_name} attention_weights-{timestamp}.pt")
 
 # TODO: load in training data if we're fine tuning, and append the new data to old dataframe
 
@@ -209,5 +228,6 @@ if __name__ == "__main__":
     ap.add_argument("--save_losses", action="store_true")
     ap.add_argument("--save_checkpoints", action="store_true")
     ap.add_argument("--eval_model", action="store_true")
+    ap.add_argument("--save_attention_weights", action="store_true")
 
     main(ap.parse_args())
