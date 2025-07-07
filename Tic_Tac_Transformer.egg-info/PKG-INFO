@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: Tic-Tac-Transformer
 Version: 0.0.0
 Summary: Using mechanistic interpretability techniques to understand the inside of a transformer that understands tic tac toe!

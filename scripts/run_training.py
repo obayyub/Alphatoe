@@ -55,19 +55,34 @@ def main(args: argparse.Namespace):
 
     print(f"model checkpoints is: {args.save_checkpoints}")
     print(f"layer count is: {args.n_layers}")
-    model, training_data = train.train(
-        model,
-        train_data,
-        train_labels,
-        test_data,
-        test_labels,
-        optimizer=optimizer,
-        n_epochs=args.n_epochs,
-        batch_size=args.batch_size,
-        save_losses=args.save_losses,
-        save_checkpoints=args.save_checkpoints,
-        save_attention_weights=args.save_attention_weights,
-    )
+    if args.save_attention_weights:
+        model, training_data, attention_weights_data = train.train(
+            model,
+            train_data,
+            train_labels,
+            test_data,
+            test_labels,
+            optimizer=optimizer,
+            n_epochs=args.n_epochs,
+            batch_size=args.batch_size,
+            save_losses=args.save_losses,
+            save_checkpoints=args.save_checkpoints,
+            save_attention_weights=args.save_attention_weights,
+        )
+    else:
+        model, training_data = train.train(
+            model,
+            train_data,
+            train_labels,
+            test_data,
+            test_labels,
+            optimizer=optimizer,
+            n_epochs=args.n_epochs,
+            batch_size=args.batch_size,
+            save_losses=args.save_losses,
+            save_checkpoints=args.save_checkpoints,
+            save_attention_weights=args.save_attention_weights,
+        )
 
     print("Saving model weights to disk...")
     save_weights(model, args.experiment_name, timestamp, model_dir)
@@ -78,9 +93,8 @@ def main(args: argparse.Namespace):
         save_training_data(training_data, args.experiment_name, timestamp, model_dir)
         print("Training data saved!")
 
-    if args.save_attention_weights and "attention_weights" in training_data.columns:
+    if args.save_attention_weights:
         print("Saving attention weights to disk...")
-        attention_weights_data = training_data["attention_weights"].iloc[0]  # Get the list from the dataframe
         save_attention_weights(attention_weights_data, args.experiment_name, timestamp, model_dir)
         print("Attention weights saved!")
 

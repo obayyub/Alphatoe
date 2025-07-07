@@ -119,9 +119,8 @@ def train(
         print("Saving model checkpoint dataframe...")
         df["model checkpoints"] = model_checkpoints
         print("Model checkpoints dataframe created!")
-    if save_attention_weights:
-        print("Saving attention weights dataframe...")
-        df["attention_weights"] = attention_weights_checkpoints
-        print("Attention weights dataframe created!")
 
-    return (model, df)
+    if save_attention_weights:
+        return (model, df, attention_weights_checkpoints)
+    else:
+        return (model, df)
