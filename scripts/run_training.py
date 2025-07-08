@@ -55,8 +55,8 @@ def main(args: argparse.Namespace):
 
     print(f"model checkpoints is: {args.save_checkpoints}")
     print(f"layer count is: {args.n_layers}")
-    if args.save_attention_weights:
-        model, training_data, attention_weights_data = train.train(
+    if args.save_checkpoints:
+        model, training_data, model_checkpoints = train.train(
             model,
             train_data,
             train_labels,
@@ -88,15 +88,20 @@ def main(args: argparse.Namespace):
     save_weights(model, args.experiment_name, timestamp, model_dir)
     print("Model weights saved!")
     save_config(args, timestamp, model_dir)
-    if args.save_losses or args.save_checkpoints:
+
+    # Save intermediate checkpoints
+    if args.save_checkpoints and model_checkpoints:
+        print("Saving model checkpoints to disk...")
+        for checkpoint in model_checkpoints:
+            epoch = checkpoint['epoch']
+            checkpoint_name = f"{args.experiment_name}-{timestamp}-epoch{epoch}"
+            torch.save(checkpoint['state_dict'], f"{model_dir}{checkpoint_name}.pt")
+        print(f"Saved {len(model_checkpoints)} model checkpoints!")
+    
+    if args.save_losses:
         print("Saving training data to disk...")
         save_training_data(training_data, args.experiment_name, timestamp, model_dir)
         print("Training data saved!")
-
-    if args.save_attention_weights:
-        print("Saving attention weights to disk...")
-        save_attention_weights(attention_weights_data, args.experiment_name, timestamp, model_dir)
-        print("Attention weights saved!")
 
     if args.eval_model:
         num_games = 2000

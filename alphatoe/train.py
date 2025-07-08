@@ -83,11 +83,16 @@ def train(
                 test_loss = loss_fn(rearrange(test_logits), rearrange(test_labels))
                 if save_losses:
                     test_losses.append(test_loss.item())
-            if save_checkpoints:
-                model_checkpoints.append(deepcopy(model.state_dict()))
+        if save_checkpoints and (epoch % 10 == 0 or epoch == n_epochs - 1):
+            model_checkpoints.append({
+                'epoch': epoch,
+                'state_dict': deepcopy(model.state_dict()),
+                'train_loss': train_loss.item(),
+                'test_loss': test_loss.item()
+            })
 
-        # Save attention weights every 10 epochs
-        if save_attention_weights and epoch % 10 == 0:
+        # Save attention weights every 10 epochs and for the last 10 epochs
+        if save_attention_weights and (epoch % 10 == 0 or epoch >= n_epochs - 10):
             # Define the sequence for deterministic positional embeddings
             seq_fwd = t.tensor([[10, 0, 1, 2, 3, 4, 5, 7, 8, 6]]).to(model.cfg.device)
             
@@ -98,8 +103,8 @@ def train(
             attention_weights = {
                 'epoch': epoch,
                 'resolved_pos_embeddings': pos_emb.detach().clone(),
-                'W_K': deepcopy(model.W_K.detach().clone()),
-                'W_Q': deepcopy(model.W_Q.detach().clone()),
+                'W_K': model.W_K.detach().clone(),
+                'W_Q': model.W_Q.detach().clone(),
                 'sequence': seq_fwd.cpu(),  # Save sequence on CPU for storage
             }
             attention_weights_checkpoints.append(attention_weights)
@@ -116,11 +121,8 @@ def train(
         df["train losses"] = train_losses
         print("Train and test loss dataframe created!")
     if save_checkpoints:
-        print("Saving model checkpoint dataframe...")
-        df["model checkpoints"] = model_checkpoints
-        print("Model checkpoints dataframe created!")
-
-    if save_attention_weights:
+        return (model, df, model_checkpoints)
+    elif save_attention_weights:
         return (model, df, attention_weights_checkpoints)
     else:
         return (model, df)

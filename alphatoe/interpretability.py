@@ -20,10 +20,13 @@ def get_device():
 def numpy(t):
     return t.cpu().detach().numpy()
 
+def remove_epoch_suffix(filename):
+    return filename.split('-epoch')[0]
 
 def load_model(model_file_name: str):
     weights = torch.load(model_file_name + ".pt", map_location=get_device())
-    with open(model_file_name + ".json", "r") as f:
+    json_name = remove_epoch_suffix(model_file_name)
+    with open(json_name + ".json", "r") as f:
         args = json.load(f)
     model_cfg = HookedTransformerConfig(
         n_layers=args["n_layers"],
