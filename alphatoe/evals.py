@@ -31,6 +31,21 @@ def sample_games(
         games.append(_sample_game(model, temp))
     return games
 
+def sample_games_batch(model, temp, num_games, batch_size=100):
+    """Sample games in batches to better utilize GPU"""
+    all_games = []
+    for i in range(0, num_games, batch_size):
+        batch_games = []
+        current_batch_size = min(batch_size, num_games - i)
+        
+        with t.no_grad():
+            # Process multiple games simultaneously
+            for _ in range(current_batch_size):
+                game = _sample_game(model, temp)
+                batch_games.append(game)
+        
+        all_games.extend(batch_games)
+    return all_games
 
 # evals return True on model error
 def _check_played_repeat_moves(game: list[int]) -> bool:
